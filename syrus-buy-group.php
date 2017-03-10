@@ -43,10 +43,34 @@ function buyg_enqueue_scripts()
 add_action('admin_enqueue_scripts', 'buyg_enqueue_scripts');
 
 function buyg_options_page_html() {
+
+  global $wpdb;
+  $table = $wpdb->prefix."magento_stores";
+
+  if($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+    //recuero gli store
+    $stores = $_POST['store'];
+    $stores = join(", ", $stores);
+    $stores = "( ".$stores." )";
+    //recupero l'azione
+    $action = $_POST['action'];
+    if($action == "buyg_activate_stores") {
+      $wpdb->query("UPDATE $table SET `active` = 1 WHERE `id` IN $stores");
+    }
+    else if($action == "buyg_deactivate_stores") {
+      $wpdb->query("UPDATE $table SET `active` = 0 WHERE `id` IN $stores");
+    }
+    else if($action == "buyg_delete_stores") {
+      $wpdb->query("DELETE FROM $table WHERE `id` IN $stores");
+    }
+  }
   $store_list = new Store_List_Table();
   $store_list->prepare_items();
   echo "<div class='wrap'>";
+  echo "<form method='post'>";
   $store_list->display();
+  echo "</form>";
   echo "</div>";
 
 }

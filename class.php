@@ -132,16 +132,12 @@ function display_rows() {
 
   function get_bulk_actions() {
   $actions = array(
-    'activate' => 'Attiva',
-    'delete'    => 'Elimina'
+    'buyg_activate_stores' => 'Attiva',
+    'buyg_deactivate_stores' => 'Disattiva',
+    'buyg_delete_stores'    => 'Elimina'
   );
   return $actions;
 }
 
-// function column_col_store_cb($item) {
-        // return sprintf(
-            // '<input type="checkbox" name="store[]" value="%s" />', $item->id
-        // );
-    // }
 
 }
