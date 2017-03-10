@@ -18,6 +18,7 @@ class Store_List_Table extends WP_List_Table
   //funzione per impostare le colonne della tabella
   function get_columns() {
    return $columns= array(
+      'col_store_cb' => '',
       'col_store_id'=> 'ID',
       'col_store_label'=> 'Label',
       'col_store_url'=> 'Url',
@@ -54,7 +55,7 @@ function prepare_items() {
         //How many to display per page?
         $perpage = 5;
         //Which page is this?
-        $paged = !empty($_GET["paged"]) ? mysql_real_escape_string($_GET["paged"]) : '';
+        $paged = isset($_GET["paged"]) ? sanitize_text_field($_GET["paged"]) : '';
         //Page Number
         if(empty($paged) || !is_numeric($paged) || $paged<=0 ){
           $paged=1;
@@ -113,12 +114,13 @@ function display_rows() {
          $editlink  = '/wp-admin/link.php?action=edit&link_id='.(int)$rec->id;
          //Display the cell
          switch ( $column_name ) {
+            case "col_store_cb" : echo '<td '.$attributes.'><input type="checkbox" name="store[]" value="'.$rec->id.'" ></td>'; break;
             case "col_store_id":  echo '<td '.$attributes.'>'.stripslashes($rec->id).'</td>';   break;
             case "col_store_label": echo '<td '.$attributes.'>'.stripslashes($rec->label).'7</td>'; break;
             case "col_store_url": echo '<td '.$attributes.'>'.stripslashes($rec->url).'</td>'; break;
             case "col_store_starting_ip": echo '<td '.$attributes.'>'.$rec->starting_ip.'</td>'; break;
             case "col_store_ending_ip": echo '<td '.$attributes.'>'.$rec->ending_ip.'</td>'; break;
-            case "col_store_active": echo '<td '.$attributes.'>'.$rec->active.'</td>'; break;
+            case "col_store_active": echo '<td '.$attributes.'>'.'<input title="Attiva/Disattiva Store" type="checkbox" name="active" '.($rec->active == "1" ? "checked" :  "").' ></td>'; break;
          }
       }
 
@@ -127,5 +129,19 @@ function display_rows() {
     }
     }
   }
+
+  function get_bulk_actions() {
+  $actions = array(
+    'activate' => 'Attiva',
+    'delete'    => 'Elimina'
+  );
+  return $actions;
+}
+
+// function column_col_store_cb($item) {
+        // return sprintf(
+            // '<input type="checkbox" name="store[]" value="%s" />', $item->id
+        // );
+    // }
 
 }
