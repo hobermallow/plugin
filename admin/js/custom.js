@@ -1,3 +1,65 @@
+function addStore() {
+  var label = $('#label');
+  var url = $('#url');
+  var starting_ip = $('#starting_ip');
+  var ending_ip = $('#ending_ip');
+
+  var flag = true;
+
+  if ($(label).val() == undefined || $(label).val() == "") {
+      flag = false;
+  }
+  if ($(url).val() == undefined || $(url).val() == "") {
+      flag = false;
+  }
+  if ($(starting_ip).val() == undefined || $(starting_ip).val() == "") {
+      flag = false;
+  }
+  if ($(ending_ip).val() == undefined || $(ending_ip).val() == "") {
+      flag = false;
+  }
+  if (!flag) {
+      sweetAlert("Ops...", "Compila tutti i campi", "error");
+      return false;
+  }
+
+  //altrimenti, post con la richiesta
+  $.post(my_ajax_obj.ajax_url, { //POST request
+          _ajax_nonce: my_ajax_obj.nonce, //nonce
+          action: "buyg_add_store", //action
+          label: $(label).val(),
+          url: $(url).val(),
+          starting_ip: $(starting_ip).val(),
+          ending_ip: $(ending_ip).val() //data
+      }, function(data) { //callback
+          var obj = JSON.parse(data);
+          if (obj.status == "0") {
+              sweetAlert("Ops..", obj.msg, "error");
+              return false;
+          } else {
+              swal({
+                  title: "Ok!",
+                  text: "Salvataggio effettuato con successo!",
+                  type: "success",
+                  showCancelButton: false,
+                  confirmButtonColor: "#DD6B55",
+                  confirmButtonText: "Ok",
+                  preConfirm: function() {
+                      return new Promise(function(resolve) {
+                          setTimeout(function() {
+                              resolve();
+                          }, 1000);
+                      });
+                  }
+              }).then(function() {
+                window.location = obj.url+'';
+              });
+
+          }
+      } //insert server response
+  );
+}
+
 function modStore(id) {
     $(".has-error").removeClass("has-error");
     //recupero la riga

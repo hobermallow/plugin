@@ -41,7 +41,7 @@ class Store_List_Table extends WP_List_Table
 function prepare_items() {
    global $wpdb, $_wp_column_headers;
    $screen = get_current_screen();
-   $table = $wpdb->prefix. "magento_stores";
+   $table = $wpdb->prefix. "maddaai_magento_stores";
 
         $query = "SELECT $table.id, $table.label, $table.url, INET_NTOA($table.starting_ip) AS starting_ip, INET_NTOA($table.ending_ip) AS ending_ip, $table.active  FROM $table";
         // ricerca del termine
