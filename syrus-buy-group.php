@@ -6,11 +6,18 @@ Plugin Name: Syrus Buy Group
 //controllo che non si possa accedere direttamente al file del plugin
 defined( 'ABSPATH' ) or die("Non e' possibile accedere al file");
 
+//includo la classe per le tabelle di wordpress
+if(!class_exists('WP_List_Table')){
+   require_once( ABSPATH . 'wp-admin/includes/class-wp-list-table.php' );
+}
+
+require_once("class.php");
+
 //funzione per l'aggiunta dei file necessari di bootstrap
 function buyg_enqueue_scripts()
 {
     // JS
-    wp_enqueue_script("buyg_bootstrap",'/wp-content/plugins/syrus-buy-group/admin/js/bootstrap.min.js');
+    // wp_enqueue_script("buyg_bootstrap",'/wp-content/plugins/syrus-buy-group/admin/js/bootstrap.min.js');
     wp_enqueue_script("buyg_jquery",'/wp-content/plugins/syrus-buy-group/admin/js/jquery-3.1.1.js');
     wp_enqueue_script("buyg_jquery_mask",'/wp-content/plugins/syrus-buy-group/admin/js/jquery-mask.js');
     wp_enqueue_script("buyg_sweetalert",'/wp-content/plugins/syrus-buy-group/admin/js/sweetalert2.js');
@@ -20,7 +27,7 @@ function buyg_enqueue_scripts()
         array( 'buyg_jquery' )
     );
     // CSS
-    wp_enqueue_style("buyg_bootstrap_css",'/wp-content/plugins/syrus-buy-group/admin/css/bootstrap.min.css');
+    // wp_enqueue_style("buyg_bootstrap_css",'/wp-content/plugins/syrus-buy-group/admin/css/bootstrap.min.css');
     wp_enqueue_style("buyg_fontawesome_css",'/wp-content/plugins/syrus-buy-group/admin/css/fontawesome/css/font-awesome.css');
     wp_enqueue_style("buyg_sweetalert",'/wp-content/plugins/syrus-buy-group/admin/css/sweetalert2.css');
 
@@ -36,100 +43,12 @@ function buyg_enqueue_scripts()
 add_action('admin_enqueue_scripts', 'buyg_enqueue_scripts');
 
 function buyg_options_page_html() {
-  //aggiungo bootstrap
-  global $wpdb;
-  //recupero gli store dal database
-  $table = $wpdb->prefix."magento_stores";
+  $store_list = new Store_List_Table();
+  $store_list->prepare_items();
+  echo "<div class='wrap'>";
+  $store_list->display();
+  echo "</div>";
 
-  $stores = $wpdb->get_results("SELECT $table.id, $table.label, $table.url, INET_NTOA($table.starting_ip) AS starting_ip, INET_NTOA($table.ending_ip) AS ending_ip  FROM $table");
-  // echo var_dump("SELECT $table.id, $table.lable, $table.url, INET_NTOA($table.starting_ip) AS starting_ip, INET_NTOA($table.ending_ip) AS ending_ip  FROM $table");
-  ?>
-  <div class="wrap">
-    <div class="row">
-      <div class="col-lg-12">
-    <div class="panel panel-default">
-      <div class="panel-heading">
-        <h3 class="panel-title">Lista degli store disponibili</h3>
-      </div>
-      <div class="panel-body">
-        <table class="col-lg-12 table table-hover">
-          <thead>
-            <tr>
-            <th>
-              Id
-            </th>
-            <th>
-              Label
-            </th>
-            <th>
-              Url
-            </th>
-            <th>
-              Ip Iniziale
-            </th>
-            <th>
-              Ip Finale
-            </th>
-            <th>
-              Azioni
-            </th>
-          </tr>
-          </thead>
-          <tbody>
-            <?php foreach($stores as $store): ?>
-              <?php
-              $link = add_query_arg(
-                array(
-                  'page' => 'buyg-mod-details', // as defined in the hidden page
-                  'id_store' => $store->id
-                ),
-                admin_url('admin.php')
-              );
-               ?>
-              <tr style="cursor:pointer" onclick="window.location = '<?php echo $link; ?>'" >
-                <td>
-                  <?php echo $store->id; ?>
-                </td>
-                <td>
-                  <?php echo $store->label; ?>
-                </td>
-                <td>
-                  <?php echo $store->url; ?>
-                </td>
-                <td>
-                  <?php echo $store->starting_ip; ?>
-                </td>
-                <td>
-                  <?php echo $store->ending_ip; ?>
-                </td>
-                <td>
-                  <button type="button" onclick="event.stopPropagation(); delStore(<?php echo $store->id; ?>)" class="btn btn-danger" data-toggle="tooltip" title="Elimina" name="button"><i class="fa fa-close"></i> Elimina</button>
-                </td>
-              </tr>
-            <?php endforeach; ?>
-          </tbody>
-        </table>
-        <div class="row">
-          <div class="col-lg-12">
-            <div class="btn-group">
-              <?php
-              $link = add_query_arg(
-                array(
-                  'page' => 'buyg-mod-details', // as defined in the hidden page
-                ),
-                admin_url('admin.php')
-              );
-               ?>
-              <button type="button" class="btn btn-primary" onclick="window.location = '<?php echo $link; ?>'" name="button"><i class="fa fa-plus"></i> Aggiunti Store</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-</div>
-    <?php
 }
 
 function buyg_options_mod_details_page_html() {
@@ -279,6 +198,7 @@ function buyg_install_database() {
     url varchar(255) NOT NULL,
     starting_ip int unsigned NULL,
     ending_ip int unsigned NULL,
+    active tinyint(1) NOT NULL DEFAULT 0,
     PRIMARY KEY (id)
   ) $charset_collate;";
 

@@ -105,3 +105,24 @@ function delStore(id) {
     });
 
 }
+
+function prepareModStore(target, id) {
+  //recupero i dati dello store
+  var storeRow = $(target).closest(".row-store");
+  var id = $(storeRow).find("input[name=id_mod]").val();
+  var label = $(storeRow).find("input[name=label_mod]").val();
+  var url = $(storeRow).find("input[name=url_mod]").val();
+  var starting_ip = $(storeRow).find("input[name=starting_ip_mod]").val();
+  var ending_ip = $(storeRow).find("input[name=ending_ip_mod]").val();
+  //creo la riga per il form
+  row = document.createElement("tr");
+  $(row).addClass("row-store-mod");
+  $(row).append("<input name='id' value='"+id+"' type='hidden'>");
+  $(row).append("<td></td>");
+  $(row).append("<td class='column-columnname'><input type='text' name='label' value='"+label+"' ></td>")
+  $(row).append("<td class='column-columnname'><input type='text' name='url' value='"+url+"' ></td>")
+  $(row).append("<td class='column-columnname'><input type='text' name='starting_ip' value='"+starting_ip+"' ></td>")
+  $(row).append("<td class='column-columnname'><input type='text' name='ending_ip' value='"+ending_ip+"' ></td>")
+  $(storeRow).after($(row));
+  $(storeRow).hide();
+}
