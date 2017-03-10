@@ -121,9 +121,23 @@ function prepareModStore(id) {
   $(row).append("<td></td>");
   $(row).append("<td class='column-columnname'><input type='text' name='label' value='"+label+"' ></td>")
   $(row).append("<td class='column-columnname'><input type='text' name='url' value='"+url+"' ></td>")
-  $(row).append("<td class='column-columnname'><input type='text' name='starting_ip' value='"+starting_ip+"' ></td>")
-  $(row).append("<td class='column-columnname'><input type='text' name='ending_ip' value='"+ending_ip+"' ></td>")
+  $(row).append("<td class='column-columnname'><input type='text' placeholder='255.255.255.255' name='starting_ip' value='"+starting_ip+"' ></td>")
+  $(row).append("<td class='column-columnname'><input type='text' placeholder='255.255.255.255' name='ending_ip' value='"+ending_ip+"' ></td>")
   $(row).append("<td class='column-columnname'><input type='button' class='button' value='Salva' name='Salva' onclick='modStore("+id+")' /></td>")
+  $(row).find("input[name=starting_ip]").mask('0ZZ.0ZZ.0ZZ.0ZZ', {
+      translation: {
+      'Z': {
+        pattern: /[0-9]/, optional: true
+      },
+    }
+  });
+  $(row).find("input[name=ending_ip]").mask('0ZZ.0ZZ.0ZZ.0ZZ', {
+      translation: {
+      'Z': {
+        pattern: /[0-9]/, optional: true
+      },
+    }
+  });
   $(storeRow).after($(row));
   $(storeRow).hide();
 }
