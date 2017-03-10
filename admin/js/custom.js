@@ -1,30 +1,28 @@
 function modStore(id) {
     $(".has-error").removeClass("has-error");
+    //recupero la riga
+    var row =   $(".row-store-mod-"+id);
     //controllo che siano stati riempiti tutti i campi
-    var label = $("#label");
-    var url = $("#url");
-    var starting_ip = $("#starting_ip");
-    var ending_ip = $("#ending_ip");
+    var label = $(row).find("input[name=label]");
+    var url = $(row).find("input[name=url]");
+    var starting_ip = $(row).find("input[name=starting_ip]");
+    var ending_ip = $(row).find("input[name=ending_ip]");
     var flag = true;
 
     if ($(label).val() == undefined || $(label).val() == "") {
-        $(label).parent().addClass("has-error");
         flag = false;
     }
     if ($(url).val() == undefined || $(url).val() == "") {
-        $(url).parent().addClass("has-error");
         flag = false;
     }
     if ($(starting_ip).val() == undefined || $(starting_ip).val() == "") {
-        $(starting_ip).parent().addClass("has-error");
         flag = false;
     }
     if ($(ending_ip).val() == undefined || $(ending_ip).val() == "") {
-        $(ending_ip).parent().addClass("has-error");
         flag = false;
     }
     if (!flag) {
-        sweetAlert("Ops...", "Compila i campi evidenziati", "error");
+        sweetAlert("Ops...", "Compila tutti i campi", "error");
         return false;
     }
     //altrimenti, post con la richiesta
@@ -32,10 +30,10 @@ function modStore(id) {
             _ajax_nonce: my_ajax_obj.nonce, //nonce
             action: "buyg_mod_store", //action
             id: id,
-            label: $("#label").val(),
-            url: $("#url").val(),
-            starting_ip: $("#starting_ip").val(),
-            ending_ip: $("#ending_ip").val() //data
+            label: $(label).val(),
+            url: $(url).val(),
+            starting_ip: $(starting_ip).val(),
+            ending_ip: $(ending_ip).val() //data
         }, function(data) { //callback
             var obj = JSON.parse(data);
             if (obj.status == "0") {
@@ -54,12 +52,11 @@ function modStore(id) {
                         return new Promise(function(resolve) {
                             setTimeout(function() {
                                 resolve();
-                            }, 2000);
+                            }, 1000);
                         });
                     }
                 }).then(function() {
-                    console.log("ciao");
-                    window.location = "" + obj.url;
+                  location.reload();
                 });
 
             }
@@ -106,23 +103,27 @@ function delStore(id) {
 
 }
 
-function prepareModStore(target, id) {
+function prepareModStore(id) {
+  //nascondo tutte le altre eventuali righe di modifica
+  $(".row-store-mod").remove();
+  $("tr[id^=record]").show();
   //recupero i dati dello store
-  var storeRow = $(target).closest(".row-store");
-  var id = $(storeRow).find("input[name=id_mod]").val();
-  var label = $(storeRow).find("input[name=label_mod]").val();
-  var url = $(storeRow).find("input[name=url_mod]").val();
-  var starting_ip = $(storeRow).find("input[name=starting_ip_mod]").val();
-  var ending_ip = $(storeRow).find("input[name=ending_ip_mod]").val();
+  var storeRow = $("#record_"+id);
+  var label = $(storeRow).find("td.col_store_label").html();
+  var url = $(storeRow).find("td.col_store_url").html();
+  var starting_ip = $(storeRow).find("td.col_store_starting_ip").html();
+  var ending_ip = $(storeRow).find("td.col_store_ending_ip").html();
   //creo la riga per il form
   row = document.createElement("tr");
-  $(row).addClass("row-store-mod");
+  $(row).addClass("row-store-mod-"+id);
   $(row).append("<input name='id' value='"+id+"' type='hidden'>");
+  $(row).append("<td></td>");
   $(row).append("<td></td>");
   $(row).append("<td class='column-columnname'><input type='text' name='label' value='"+label+"' ></td>")
   $(row).append("<td class='column-columnname'><input type='text' name='url' value='"+url+"' ></td>")
   $(row).append("<td class='column-columnname'><input type='text' name='starting_ip' value='"+starting_ip+"' ></td>")
   $(row).append("<td class='column-columnname'><input type='text' name='ending_ip' value='"+ending_ip+"' ></td>")
+  $(row).append("<td class='column-columnname'><input type='button' class='button' value='Salva' name='Salva' onclick='modStore("+id+")' /></td>")
   $(storeRow).after($(row));
   $(storeRow).hide();
 }

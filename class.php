@@ -112,7 +112,7 @@ function display_rows() {
    if(!empty($records)){foreach($records as $rec){
 
       //Open the line
-        echo '<tr id="record_'.$rec->id.'">';
+        echo '<tr onclick="prepareModStore('.$rec->id.')" id="record_'.$rec->id.'">';
       foreach ( $columns as $column_name => $column_display_name ) {
          //Style attributes for each col
          $class = "class='$column_name column-$column_name'";
