@@ -105,7 +105,7 @@ function delStore(id) {
 
 function prepareModStore(id) {
   //nascondo tutte le altre eventuali righe di modifica
-  $(".row-store-mod").remove();
+  $("[class^=row-store-mod]").remove();
   $("tr[id^=record]").show();
   //recupero i dati dello store
   var storeRow = $("#record_"+id);
@@ -119,11 +119,12 @@ function prepareModStore(id) {
   $(row).append("<input name='id' value='"+id+"' type='hidden'>");
   $(row).append("<td></td>");
   $(row).append("<td></td>");
-  $(row).append("<td class='column-columnname'><input type='text' name='label' value='"+label+"' ></td>")
-  $(row).append("<td class='column-columnname'><input type='text' name='url' value='"+url+"' ></td>")
-  $(row).append("<td class='column-columnname'><input type='text' placeholder='255.255.255.255' name='starting_ip' value='"+starting_ip+"' ></td>")
-  $(row).append("<td class='column-columnname'><input type='text' placeholder='255.255.255.255' name='ending_ip' value='"+ending_ip+"' ></td>")
-  $(row).append("<td class='column-columnname'><input type='button' class='button' value='Salva' name='Salva' onclick='modStore("+id+")' /></td>")
+  $(row).append("<td class='column-columnname'><input type='text' name='label' value='"+label+"' ></td>");
+  $(row).append("<td class='column-columnname'><input type='text' name='url' value='"+url+"' ></td>");
+  $(row).append("<td class='column-columnname'><input type='text' placeholder='255.255.255.255' name='starting_ip' value='"+starting_ip+"' ></td>");
+  $(row).append("<td class='column-columnname'><input type='text' placeholder='255.255.255.255' name='ending_ip' value='"+ending_ip+"' ></td>");
+  $(row).append("<td class='column-columnname'></td>");
+  $(row).append("<td class='column-columnname'><input type='button' class='button' value='Annulla' onclick='$(this).closest(\"tr\").hide(); $(\"tr[id^=record]\").show() ' ><input type='button' class='button' value='Salva' name='Salva' onclick='modStore("+id+")' /></td>");
   $(row).find("input[name=starting_ip]").mask('0ZZ.0ZZ.0ZZ.0ZZ', {
       translation: {
       'Z': {

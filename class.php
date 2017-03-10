@@ -24,7 +24,8 @@ class Store_List_Table extends WP_List_Table
       'col_store_url'=> 'Url',
       'col_store_starting_ip'=> 'Ip Iniziale',
       'col_store_ending_ip'=> 'Ip Finale',
-      'col_store_active'=> 'Attivo'
+      'col_store_active'=> 'Attivo',
+      'col_store_actions'=> 'Azioni',
    );
  }
 
@@ -112,7 +113,7 @@ function display_rows() {
    if(!empty($records)){foreach($records as $rec){
 
       //Open the line
-        echo '<tr onclick="prepareModStore('.$rec->id.')" id="record_'.$rec->id.'">';
+        echo '<tr  id="record_'.$rec->id.'">';
       foreach ( $columns as $column_name => $column_display_name ) {
          //Style attributes for each col
          $class = "class='$column_name column-$column_name'";
@@ -130,7 +131,8 @@ function display_rows() {
             case "col_store_url": echo '<td '.$attributes.'>'.stripslashes($rec->url).'</td>'; break;
             case "col_store_starting_ip": echo '<td '.$attributes.'>'.$rec->starting_ip.'</td>'; break;
             case "col_store_ending_ip": echo '<td '.$attributes.'>'.$rec->ending_ip.'</td>'; break;
-            case "col_store_active": echo '<td '.$attributes.'>'.'<input title="Attiva/Disattiva Store" value="'.$rec->id.'" onclick="toggleStore(event.target)" type="checkbox" name="active" '.($rec->active == "1" ? "checked" :  "").' ></td>'; break;
+            case "col_store_active": echo '<td '.$attributes.'>'.'<input title="Attiva/Disattiva Store" value="'.$rec->id.'" onclick="event.stopPropagation();toggleStore(event.target)" type="checkbox" name="active" '.($rec->active == "1" ? "checked" :  "").' ></td>'; break;
+            case "col_store_actions": echo '<td '.$attributes.'><input type="button" class="button" value="Modifica" onclick="event.stopPropagation(); prepareModStore('.$rec->id.')" >'; break;
          }
       }
 

@@ -174,24 +174,50 @@ function buyg_options_mod_details_page_html() {
 function buyg_options_page()
 {
     //aggiungo la pagina generale di gestione del plugin
-    add_submenu_page(
-        'tools.php',
-        '',
-        'Buy Group Options',
+    add_menu_page(
+        'Maddaai Multistores',
+        'Maddaai Multistores',
         'manage_options',
         'buyg',
         'buyg_options_page_html'
     );
 
-    //aggiungo una pagina non visibile dal menu' per l'aggiunta di un nuovo store
+    //aggiungo la pagina per gli utenti
     add_submenu_page(
-      null,
-      '',
-      '',
+      'buyg',
+      'Utenti',
+      'Utenti',
       'manage_options',
-      'buyg-mod-details',
-      'buyg_options_mod_details_page_html'
-     );
+      'buyg_users'
+    );
+
+    //aggiungo la pagina per gli utenti
+    add_submenu_page(
+      'buyg',
+      'Richieste',
+      'Richieste',
+      'manage_options',
+      'buyg_requests'
+    );
+
+    //aggiungo la pagina per gli utenti
+    add_submenu_page(
+      'buyg',
+      'Annunci',
+      'Annunci',
+      'manage_options',
+      'buyg_news'
+    );
+
+    //aggiungo la pagina per gli utenti
+    add_submenu_page(
+      'buyg',
+      'Impostazioni',
+      'Impostazioni',
+      'manage_options',
+      'buyg_settings'
+    );
+
 }
 //aggiungo la funzione all'hook
 add_action('admin_menu', 'buyg_options_page');
