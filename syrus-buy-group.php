@@ -69,6 +69,10 @@ function buyg_options_page_html() {
   $store_list->prepare_items();
   echo "<div class='wrap'>";
   echo "<form method='post'>";
+  $store_list->search_box("Cerca", "search_id");
+  ?>
+  <input class="button" style="float:right" type="submit" name="reset" value="reset">
+  <?php
   $store_list->display();
   echo "</form>";
   echo "</div>";
@@ -342,3 +346,23 @@ function buyg_del_store() {
 }
 
 add_action( 'wp_ajax_buyg_del_store', 'buyg_del_store' );
+
+
+function buyg_toggle_store() {
+  check_ajax_referer('ajax_url_nonce');
+  global $wpdb;
+  $table = $wpdb->prefix."magento_stores";
+  $id = $_POST['id'];
+  $active = $_POST['active'];
+  $ret = $wpdb->update($table, array("active" => $active), array("id" => $id));
+  if($ret) {
+    echo json_encode(array("status" => 1));
+    wp_die();
+  }
+  else {
+    echo json_encode(array("status" => 0, "msg" => "Errore nell'attivazione/disattivazione dello store"));
+    wp_die();
+  }
+}
+
+add_action('wp_ajax_buyg_toggle_store', 'buyg_toggle_store');

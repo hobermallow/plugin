@@ -126,3 +126,28 @@ function prepareModStore(target, id) {
   $(storeRow).after($(row));
   $(storeRow).hide();
 }
+
+function toggleStore(el) {
+  var active = $(el).is(":checked");
+  var id = $(el).val();
+  $.post(my_ajax_obj.ajax_url, { //POST request
+          _ajax_nonce: my_ajax_obj.nonce, //nonce
+          action: "buyg_toggle_store", //action
+          id: id,
+          active : active ? 1 : 0
+      }, function(data) { //callback
+          var obj = JSON.parse(data);
+          if (obj.status == "0") {
+              sweetAlert("Ops..", obj.msg, "error");
+              return false;
+          } else {
+              if(active) {
+                $(el).prop("checked", true);
+              }
+              else {
+                $(el).prop("checked", false);
+              }
+          }
+      } //insert server response
+  );
+}
