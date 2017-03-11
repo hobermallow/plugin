@@ -20,6 +20,7 @@ function buyg_enqueue_scripts()
     // wp_enqueue_script("buyg_bootstrap",'/wp-content/plugins/syrus-buy-group/admin/js/bootstrap.min.js');
     wp_enqueue_script("buyg_jquery",'/wp-content/plugins/syrus-buy-group/admin/js/jquery-3.1.1.js');
     wp_enqueue_script("buyg_jquery_mask",'/wp-content/plugins/syrus-buy-group/admin/js/jquery-mask.js');
+    wp_enqueue_script("buyg_jquery_ui",'/wp-content/plugins/syrus-buy-group/admin/plugins/jquery-ui-1.12.1.custom/jquery-ui.js', array('buyg_jquery'));
     wp_enqueue_script("buyg_sweetalert",'/wp-content/plugins/syrus-buy-group/admin/js/sweetalert2.js');
     //il mio script per tutte le funzioni ajax
     wp_enqueue_script( 'buyg_ajax_script',
@@ -30,6 +31,7 @@ function buyg_enqueue_scripts()
     // wp_enqueue_style("buyg_bootstrap_css",'/wp-content/plugins/syrus-buy-group/admin/css/bootstrap.min.css');
     wp_enqueue_style("buyg_fontawesome_css",'/wp-content/plugins/syrus-buy-group/admin/css/fontawesome/css/font-awesome.css');
     wp_enqueue_style("buyg_sweetalert",'/wp-content/plugins/syrus-buy-group/admin/css/sweetalert2.css');
+    wp_enqueue_style("buyg_jquery_ui",'/wp-content/plugins/syrus-buy-group/admin/plugins/jquery-ui-1.12.1.custom/jquery-ui.css');
 
     $title_nonce = wp_create_nonce( 'ajax_url_nonce' );
     wp_localize_script( 'buyg_ajax_script', 'my_ajax_obj', array(
@@ -88,6 +90,174 @@ function buyg_options_page_html() {
 
 }
 
+function buyg_users_page_html() {
+
+  global $wpdb;
+  $table = $wpdb->prefix."maddaai_users";
+
+  if($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+    //recuero gli utenti
+    $users = $_POST['user'];
+    $users = join(", ", $users);
+    $users = "( ".$users." )";
+    //recupero l'azione
+    $action = $_POST['action'];
+    if($action == "buyg_activate_users") {
+      $wpdb->query("UPDATE $table SET `active` = 1 WHERE `id` IN $users");
+    }
+    else if($action == "buyg_deactivate_users") {
+      $wpdb->query("UPDATE $table SET `active` = 0 WHERE `id` IN $users");
+    }
+    else if($action == "buyg_delete_users") {
+      $wpdb->query("DELETE FROM $table WHERE `id` IN $users");
+    }
+  }
+  $user_list = new Users_List_Table();
+  $user_list->prepare_items();
+  echo "<div class='wrap'>";
+  echo "<form method='post'>";
+  $user_list->search_box("Cerca", "search_id");
+  ?>
+  <input class="button" style="float:right" type="submit" name="reset" value="reset">
+  <?php
+  $user_list->display();
+  echo "</form>";
+  echo "</div>";
+  $link = add_query_arg(
+    array(
+      'page' => 'buyg_add_user', // as defined in the hidden page
+    ),
+    admin_url('admin.php')
+  );
+   ?>
+  <button type="button" class="button" onclick="window.location = '<?php echo $link; ?>'" name="button"><i class="fa fa-plus"></i> Aggiunti Utente</button>
+<?php
+
+
+}
+
+
+function buyg_add_user_page_html() {
+  //aggiungo bootstrap
+  //db
+  global $wpdb;
+  //nome della table
+  $table = $wpdb->prefix."maddaai_users";
+  $table_stores = $wpdb->prefix."maddaai_magento_stores";
+  //recupero gli stores disponibili
+  $stores = $wpdb->get_results("SELECT $table_stores.id, $table_stores.label FROM $table_stores ");
+
+  ?>
+  <div class="wrap">
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <h3 class="panel-title"></h3>
+      </div>
+      <div class="panel-body">
+        <form class="" action="index.html" method="post">
+          <div class="row">
+            <div class="col-lg-6">
+              <div class="form-group">
+                <label for="name">Nome</label>
+                <input type="text" value="" class="form-control" name="name" id="name" placeholder="">
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-lg-6">
+              <div class="form-group">
+                <label for="surname">Cognome</label>
+                <input type="text" value="" class="form-control" name="surname" id="surname">
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-lg-6">
+              <div class="form-group">
+                <label for="mail">Mail</label>
+                <input type="text" value="" class="form-control" name="mail" id="mail">
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-lg-6">
+              <div class="form-group">
+                <label for="id_store">Store</label>
+                <select name="id_store" id="id_store" class="form-control" >
+                  <option value=""></option>
+                  <?php foreach ($stores as $key => $value): ?>
+                    <option value="<?php echo $value->id; ?>"><?php echo $value->label; ?></option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-lg-6">
+              <div class="form-group">
+                <label for="cf">Codice Fiscale</label>
+                <input type="text" value="" class="form-control" name="cf" id="cf">
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-lg-6">
+              <div class="form-group">
+                <label for="pwd">Password</label>
+                <input type="password" value="" class="form-control" name="pwd" id="pwd">
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-lg-6">
+              <div class="form-group">
+                <label for="pwd_confirm">Conferma Password</label>
+                <input type="password" value="" class="form-control" name="pwd_confirm" id="pwd_confirm">
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-lg-12 " style="text-align:right">
+              <button class="button" type="button" name="button" onclick="window.location = '<?php echo add_query_arg(
+                array(
+                  'page' => 'buyg_users', // as defined in the hidden page
+                ),
+                admin_url('admin.php')
+              ); ?>'"><i class="fa fa-arrow-left"></i> Torna alla lista</button>
+              <button class="button" onclick="addUser()" type="button" name="button"><i class="fa fa-check"></i> Salva</button>
+            </div>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  </div>
+  <script type="text/javascript">
+    $(document).ready(function () {
+      $('#ending_ip').mask('0ZZ.0ZZ.0ZZ.0ZZ', {
+          translation: {
+          'Z': {
+            pattern: /[0-9]/, optional: true
+          },
+        }
+      });
+    $('#starting_ip').mask('0ZZ.0ZZ.0ZZ.0ZZ', {
+        translation: {
+        'Z': {
+          pattern: /[0-9]/, optional: true
+        },
+      }
+    });
+    });
+
+  </script>
+
+  <?php
+}
+
+
+
 function buyg_add_store_page_html() {
   //aggiungo bootstrap
   //db
@@ -143,7 +313,7 @@ function buyg_add_store_page_html() {
                 ),
                 admin_url('admin.php')
               ); ?>'"><i class="fa fa-arrow-left"></i> Torna alla lista</button>
-              <button class="button" onclick="addStore()" type="button" name="button"><i class="fa fa-check"></i> Modifica</button>
+              <button class="button" onclick="addStore()" type="button" name="button"><i class="fa fa-check"></i> Salva</button>
             </div>
           </div>
         </form>
@@ -191,7 +361,8 @@ function buyg_options_page()
       'Utenti',
       'Utenti',
       'manage_options',
-      'buyg_users'
+      'buyg_users',
+      'buyg_users_page_html'
     );
 
     //aggiungo la pagina per le richieste
@@ -231,6 +402,16 @@ function buyg_options_page()
       'buyg_add_store_page_html'
     );
 
+    //pagina per l'aggiunta di uno stores
+    add_submenu_page(
+      null,
+      'Aggiungi Utente',
+      'Aggiungi Utente',
+      'manage_options',
+      'buyg_add_user',
+      'buyg_add_user_page_html'
+    );
+
 }
 //aggiungo la funzione all'hook
 add_action('admin_menu', 'buyg_options_page');
@@ -253,7 +434,7 @@ function buyg_install_database() {
     starting_ip int unsigned NULL,
     ending_ip int unsigned NULL,
     active tinyint(1) NOT NULL DEFAULT 0,
-    data timestamp not null default current_timestamp,
+    create_date timestamp not null default current_timestamp,
     PRIMARY KEY (id)
   ) $charset_collate;";
 
@@ -264,15 +445,16 @@ function buyg_install_database() {
 
   $sql = "CREATE TABLE $table_name_users (
       id bigint(20) NOT NULL AUTO_INCREMENT,
-      nome varchar(255) NOT NULL,
-  	  cognome VARCHAR(255) NOT NULL,
+      name varchar(255) NOT NULL,
+  	  surname VARCHAR(255) NOT NULL,
   	  id_store bigint(20) NOT NULL,
   	  pwd VARCHAR(255) NOT NULL,
   	  mail VARCHAR(255) NOT NULL,
   	  cf VARCHAR(255) NOT NULL,
   	  warning  bigint(20) not null default 0,
-  	  active tinyint(1) not null default 1,
+  	  active tinyint(1) not null default 0,
   	  last_login timestamp not null default current_timestamp,
+  	  create_date timestamp not null default current_timestamp,
       primary key(id)
 
   ) $charset_collate";
@@ -444,6 +626,48 @@ function buyg_add_store() {
 add_action( 'wp_ajax_buyg_add_store', 'buyg_add_store' );
 
 
+//funzione per l'aggiunta di un Utente
+function buyg_add_user() {
+  //controllo il nonce
+  check_ajax_referer( 'ajax_url_nonce' );
+  $name = $_POST['name'];
+  $surname = $_POST['surname'];
+  $mail = $_POST['mail'];
+  $cf = $_POST['cf'];
+  $pwd = $_POST['pwd'];
+  $id_store = $_POST['id_store'];
+
+  //setto id_store a 0 se stringa  vuota
+  if($id_store == "" || is_null($id_store)) {
+    $id_store = "0";
+  }
+
+
+  //controllo se la label e' gia' utilizzata
+  global $wpdb;
+  $table = $wpdb->prefix."maddaai_users";
+
+  $rows = $wpdb->get_results("SELECT * from $table WHERE mail = '$mail' ");
+  //se non e' vuoto
+  if(count($rows)> 0) {
+    echo json_encode(array("status" => 0, "msg" => "Mail inserita gia' utilizzata"));
+    wp_die();
+  }
+
+  //posso modificare il db
+  $ret = $wpdb->insert($table, array("name" => $name, "surname" => $surname, "mail" => $mail, "cf" => $cf, "pwd" => wp_hash_password($pwd), "id_store" => $id_store));
+  if($ret == false) {
+    echo json_encode(array('status' => 0, "msg" => "Errore nel salvataggio dello store" ));
+    wp_die();
+  }
+  //altrimenti tutto ok
+
+  echo json_encode(array("status" => 1, "url" => add_query_arg(array('page' => 'buyg_users',),admin_url('admin.php'))));
+  wp_die();
+}
+add_action( 'wp_ajax_buyg_add_user', 'buyg_add_user' );
+
+
 
 function buyg_del_store() {
   check_ajax_referer( 'ajax_url_nonce' );
@@ -483,3 +707,14 @@ function buyg_toggle_store() {
 }
 
 add_action('wp_ajax_buyg_toggle_store', 'buyg_toggle_store');
+
+function buyg_autocomplete_stores() {
+  check_ajax_referer('ajax_url_nonce');
+  global $wpdb;
+  $table = $wpdb->prefix."maddaai_magento_stores";
+  $term = $_POST['term'];
+  $ret = $wpdb->get_results("select id, label from $table");
+  echo json_encode($ret);
+  wp_die();
+}
+add_action("wp_ajax_buyg_autocomplete_stores", "buyg_autocomplete_stores");
