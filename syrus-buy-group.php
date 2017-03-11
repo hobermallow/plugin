@@ -657,7 +657,7 @@ function buyg_add_user() {
   //posso modificare il db
   $ret = $wpdb->insert($table, array("name" => $name, "surname" => $surname, "mail" => $mail, "cf" => $cf, "pwd" => wp_hash_password($pwd), "id_store" => $id_store));
   if($ret == false) {
-    echo json_encode(array('status' => 0, "msg" => "Errore nel salvataggio dello store" ));
+    echo json_encode(array('status' => 0, "msg" => "Errore nel salvataggio dell'utente" ));
     wp_die();
   }
   //altrimenti tutto ok
@@ -666,6 +666,56 @@ function buyg_add_user() {
   wp_die();
 }
 add_action( 'wp_ajax_buyg_add_user', 'buyg_add_user' );
+
+
+//funzione per l'aggiunta di un Utente
+function buyg_mod_user() {
+  //controllo il nonce
+  check_ajax_referer( 'ajax_url_nonce' );
+  $id = $_POST['id'];
+  $name = $_POST['name'];
+  $surname = $_POST['surname'];
+  $mail = $_POST['mail'];
+  $cf = $_POST['cf'];
+  $id_store = $_POST['id_store'];
+
+  //setto id_store a 0 se stringa  vuota
+  if($id_store == "" || is_null($id_store)) {
+    $id_store = "0";
+  }
+
+
+  //controllo se la label e' gia' utilizzata
+  global $wpdb;
+  $table = $wpdb->prefix."maddaai_users";
+
+  $rows = $wpdb->get_results("SELECT * from $table WHERE mail = '$mail' and id != $id");
+  //se non e' vuoto
+  if(count($rows)> 0) {
+    echo json_encode(array("status" => 0, "msg" => "Mail inserita gia' utilizzata"));
+    wp_die();
+  }
+  //controllo se sto effettivamente effettuando delle modifiche (se non ci sono differenze, l'update di wp da' errore)
+  $user = $wpdb->get_row("SELECT * FROM $table WHERE id = $id");
+  if($user != false) {
+    if($user->name == $name && $user->surname == $surname && $user->cf == $cf && $user->mail == $mail && $user->id_store == $id_store ) {
+      echo json_encode(array("status" => 0, "msg" => "Non hai effettuato alcuna modifica :)"));
+      wp_die();
+    }
+  }
+
+  //posso modificare il db
+  $ret = $wpdb->update($table, array("name" => $name, "surname" => $surname, "mail" => $mail, "cf" => $cf, "id_store" => $id_store), array('id' => $id));
+  if($ret == false) {
+    echo json_encode(array('status' => 0, "msg" => "Errore nel salvataggio dell'Utente" ));
+    wp_die();
+  }
+  //altrimenti tutto ok
+
+  echo json_encode(array("status" => 1, "url" => add_query_arg(array('page' => 'buyg_users',),admin_url('admin.php'))));
+  wp_die();
+}
+add_action( 'wp_ajax_buyg_mod_user', 'buyg_mod_user' );
 
 
 
@@ -708,12 +758,38 @@ function buyg_toggle_store() {
 
 add_action('wp_ajax_buyg_toggle_store', 'buyg_toggle_store');
 
+function buyg_toggle_user() {
+  check_ajax_referer('ajax_url_nonce');
+  global $wpdb;
+  $table = $wpdb->prefix."maddaai_users";
+  $id = $_POST['id'];
+  $active = $_POST['active'];
+  $ret = $wpdb->update($table, array("active" => $active), array("id" => $id));
+  if($ret) {
+    echo json_encode(array("status" => 1));
+    wp_die();
+  }
+  else {
+    echo json_encode(array("status" => 0, "msg" => "Errore nell'attivazione/disattivazione dell'utente"));
+    wp_die();
+  }
+}
+
+add_action('wp_ajax_buyg_toggle_user', 'buyg_toggle_user');
+
+
 function buyg_autocomplete_stores() {
   check_ajax_referer('ajax_url_nonce');
   global $wpdb;
   $table = $wpdb->prefix."maddaai_magento_stores";
   $term = $_POST['term'];
-  $ret = $wpdb->get_results("select id, label from $table");
+  if(is_null($term) || $term == "")  {
+    $where_clause = "";
+  }
+  else {
+    $where_clause = " where label like '%$term%'";
+  }
+  $ret = $wpdb->get_results("select id, label from $table ".$where_clause);
   echo json_encode($ret);
   wp_die();
 }

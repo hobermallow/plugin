@@ -289,7 +289,7 @@ function display_rows() {
             case "col_user_cf": echo '<td width="20%" '.$attributes.'>'.$rec->cf.'</td>'; break;
             case "col_user_warning": echo '<td width="5%" '.$attributes.'>'.$rec->warning.'</td>'; break;
             case "col_user_magento_store": echo '<td width="10%" '.$attributes.'>'.$rec->label.'<input type="hidden" name="id_store" value="'.$rec->id_store.'"></td>'; break;
-            case "col_user_active": echo '<td width="5%" '.$attributes.'>'.'<input title="Attiva/Disattiva User" value="'.$rec->id.'" onclick="event.stopPropagation();toggleStore(event.target)" type="checkbox" name="active" '.($rec->active == "1" ? "checked" :  "").' ></td>'; break;
+            case "col_user_active": echo '<td width="5%" '.$attributes.'>'.'<input title="Attiva/Disattiva User" value="'.$rec->id.'" onclick="event.stopPropagation();toggleUser(event.target)" type="checkbox" name="active" '.($rec->active == "1" ? "checked" :  "").' ></td>'; break;
             case "col_user_actions": echo '<td width="10%" '.$attributes.'><input type="button" class="button" value="Modifica" onclick="event.stopPropagation(); prepareModUser('.$rec->id.')" >'; break;
          }
       }

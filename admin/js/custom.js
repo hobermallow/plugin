@@ -149,37 +149,46 @@ function modUser(id) {
     //recupero la riga
     var row =   $(".row-user-mod-"+id);
     //controllo che siano stati riempiti tutti i campi
-    var name = $(row).find("input[name=label]");
-    var surname = $(row).find("input[name=url]");
-    var mail = $(row).find("input[name=starting_ip]");
-    var cf = $(row).find("input[name=ending_ip]");
+    var name = $(row).find("input[name=name]");
+    var surname = $(row).find("input[name=surname]");
+    var mail = $(row).find("input[name=mail]");
+    var cf = $(row).find("input[name=cf]");
+    var id_store = $(row).find("input[name=id_store]");
     var flag = true;
 
-    if ($(label).val() == undefined || $(label).val() == "") {
+    if ($(name).val() == undefined || $(name).val() == "") {
         flag = false;
     }
-    if ($(url).val() == undefined || $(url).val() == "") {
+    if ($(surname).val() == undefined || $(surname).val() == "") {
         flag = false;
     }
-    if ($(starting_ip).val() == undefined || $(starting_ip).val() == "") {
+    if ($(mail).val() == undefined || $(mail).val() == "") {
         flag = false;
     }
-    if ($(ending_ip).val() == undefined || $(ending_ip).val() == "") {
+    if ($(cf).val() == undefined || $(cf).val() == "") {
         flag = false;
     }
     if (!flag) {
         sweetAlert("Ops...", "Compila tutti i campi", "error");
         return false;
     }
+
+    //controllo che la mail inserita sia valida
+    if(!validateEmail($(mail).val())) {
+      sweetAlert("Ops...", "Inserisci un indirizzo mail valido", "error");
+      return false;
+    }
+
     //altrimenti, post con la richiesta
     $.post(my_ajax_obj.ajax_url, { //POST request
             _ajax_nonce: my_ajax_obj.nonce, //nonce
-            action: "buyg_mod_store", //action
+            action: "buyg_mod_user", //action
             id: id,
-            label: $(label).val(),
-            url: $(url).val(),
-            starting_ip: $(starting_ip).val(),
-            ending_ip: $(ending_ip).val() //data
+            name: $(name).val(),
+            surname: $(surname).val(),
+            cf: $(cf).val(),
+            mail: $(mail).val(), //data
+            id_store: $(id_store).val()
         }, function(data) { //callback
             var obj = JSON.parse(data);
             if (obj.status == "0") {
@@ -425,6 +434,31 @@ function toggleStore(el) {
   $.post(my_ajax_obj.ajax_url, { //POST request
           _ajax_nonce: my_ajax_obj.nonce, //nonce
           action: "buyg_toggle_store", //action
+          id: id,
+          active : active ? 1 : 0
+      }, function(data) { //callback
+          var obj = JSON.parse(data);
+          if (obj.status == "0") {
+              sweetAlert("Ops..", obj.msg, "error");
+              return false;
+          } else {
+              if(active) {
+                $(el).prop("checked", true);
+              }
+              else {
+                $(el).prop("checked", false);
+              }
+          }
+      } //insert server response
+  );
+}
+
+function toggleUser(el) {
+  var active = $(el).is(":checked");
+  var id = $(el).val();
+  $.post(my_ajax_obj.ajax_url, { //POST request
+          _ajax_nonce: my_ajax_obj.nonce, //nonce
+          action: "buyg_toggle_user", //action
           id: id,
           active : active ? 1 : 0
       }, function(data) { //callback
