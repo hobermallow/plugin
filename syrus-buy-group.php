@@ -794,3 +794,35 @@ function buyg_autocomplete_stores() {
   wp_die();
 }
 add_action("wp_ajax_buyg_autocomplete_stores", "buyg_autocomplete_stores");
+
+
+add_action( 'init', 'wpse9870_init_internal' );
+function wpse9870_init_internal()
+{
+    add_rewrite_rule( 'my-api.php$', 'index.php?wpse9870_api=1', 'top' );
+}
+
+//registra la nuova query variable in wp in modo che la conosca
+add_filter( 'query_vars', 'wpse9870_query_vars' );
+function wpse9870_query_vars( $query_vars )
+{
+    $query_vars[] = 'wpse9870_api';
+    return $query_vars;
+}
+
+//aggiungo funzione per parsare la richiesta fatta a wp ed eventualmente lanciare
+//il plugin ,bloccando l'esecuzione di wp
+add_action( 'parse_request', 'wpse9870_parse_request' );
+function wpse9870_parse_request( &$wp )
+{
+    if ( array_key_exists( 'wpse9870_api', $wp->query_vars ) ) {
+        include 'my-api.php';
+        exit();
+    }
+    return;
+}
+function buyg_flush(){
+        flush_rewrite_rules();
+}
+
+register_activation_hook( __FILE__, 'buyg_flush' );
