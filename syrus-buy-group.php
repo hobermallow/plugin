@@ -17,7 +17,7 @@ require_once("class.php");
 function buyg_enqueue_scripts()
 {
     // JS
-    // wp_enqueue_script("buyg_bootstrap",'/wp-content/plugins/syrus-buy-group/admin/js/bootstrap.min.js');
+    wp_enqueue_script("buyg_bootstrap",'/wp-content/plugins/syrus-buy-group/admin/js/bootstrap.min.js');
     wp_enqueue_script("buyg_jquery",'/wp-content/plugins/syrus-buy-group/admin/js/jquery-3.1.1.js');
     wp_enqueue_script("buyg_jquery_mask",'/wp-content/plugins/syrus-buy-group/admin/js/jquery-mask.js');
     wp_enqueue_script("buyg_jquery_ui",'/wp-content/plugins/syrus-buy-group/admin/plugins/jquery-ui-1.12.1.custom/jquery-ui.js', array('buyg_jquery'));
@@ -28,7 +28,7 @@ function buyg_enqueue_scripts()
         array( 'buyg_jquery' )
     );
     // CSS
-    // wp_enqueue_style("buyg_bootstrap_css",'/wp-content/plugins/syrus-buy-group/admin/css/bootstrap.min.css');
+    wp_enqueue_style("buyg_bootstrap_css",'/wp-content/plugins/syrus-buy-group/admin/css/bootstrap.min.css');
     wp_enqueue_style("buyg_fontawesome_css",'/wp-content/plugins/syrus-buy-group/admin/css/fontawesome/css/font-awesome.css');
     wp_enqueue_style("buyg_sweetalert",'/wp-content/plugins/syrus-buy-group/admin/css/sweetalert2.css');
     wp_enqueue_style("buyg_jquery_ui",'/wp-content/plugins/syrus-buy-group/admin/plugins/jquery-ui-1.12.1.custom/jquery-ui.css');
@@ -461,6 +461,7 @@ function buyg_install_database() {
 
   dbDelta($sql);
 
+
 }
 
 //registro la funzione di salvataggio delle tabelle nel db
@@ -796,33 +797,91 @@ function buyg_autocomplete_stores() {
 add_action("wp_ajax_buyg_autocomplete_stores", "buyg_autocomplete_stores");
 
 
-add_action( 'init', 'wpse9870_init_internal' );
-function wpse9870_init_internal()
-{
-    add_rewrite_rule( 'my-api.php$', 'index.php?wpse9870_api=1', 'top' );
+function registration_form_html() {
+  ?>
+  <form  action="<?php  echo esc_url( $_SERVER['REQUEST_URI'] ); ?>" method="post">
+    <div class="row" style="text-align:center">
+      <label for="buyg_name">Nome</label>
+      <input type="text" required class="form-control" name="buyg_name" id="buyg_name" placeholder="Nome">
+    </div>
+    <div class="row" style="text-align:center">
+      <label for="buyg_surname">Cognome</label>
+      <input type="text" required class="form-control" name="buyg_surname" id="buyg_surname" placeholder="Cognome">
+    </div>
+    <div class="row" style="text-align:center">
+      <label for="buyg_mail">Mail</label>
+      <input type="text" required class="form-control" name="buyg_mail" id="buyg_mail" placeholder="Mail">
+    </div>
+    <div class="row" style="text-align:center">
+      <label for="buyg_cf">Codice fiscale</label>
+      <input type="text" required class="form-control" name="buyg_cf" id="buyg_cf" placeholder="Codice Fiscale">
+    </div>
+    <div class="row" style="text-align:center">
+      <label for="buyg_password">Password</label>
+      <input type="password" required class="form-control" name="buyg_password" id="buyg_password" placeholder="">
+    </div>
+    <div class="row" style="text-align:center">
+      <label for="buyg_password_confirm">Conferma Password</label>
+      <input type="password" required class="form-control" name="buyg_password_confirm" id="buyg_password_confirm" placeholder="">
+    </div>
+    <div class="row" style="text-align:center">
+      <input type="submit"  class="btn btn-primary" value="Invia" name="buyg_submitted" />
+    </div>
+  </form>
+
+  <?php
 }
 
-//registra la nuova query variable in wp in modo che la conosca
-add_filter( 'query_vars', 'wpse9870_query_vars' );
-function wpse9870_query_vars( $query_vars )
-{
-    $query_vars[] = 'wpse9870_api';
-    return $query_vars;
-}
-
-//aggiungo funzione per parsare la richiesta fatta a wp ed eventualmente lanciare
-//il plugin ,bloccando l'esecuzione di wp
-add_action( 'parse_request', 'wpse9870_parse_request' );
-function wpse9870_parse_request( &$wp )
-{
-    if ( array_key_exists( 'wpse9870_api', $wp->query_vars ) ) {
-        include 'my-api.php';
-        exit();
+function registration_form_submit() {
+  global $wpdb;
+  $table = $wpdb->prefix."maddaai_users";
+  // if the submit button is clicked, send the email
+	if ( isset( $_POST['buyg_submitted'] ) ) {
+    //recupero i vari campi
+    $flag = true;
+    $name = sanitize_text_field($_POST['buyg_name']);
+    $surname = sanitize_text_field($_POST['buyg_surname']);
+    $mail = sanitize_text_field($_POST['buyg_mail']);
+    $cf = sanitize_text_field($_POST['buyg_cf']);
+    $password = sanitize_text_field($_POST['buyg_password']);
+    $password_confirm = sanitize_text_field($_POST['buyg_password_confirm']);
+    //controllo che la mail inserita sia validata
+    if(!is_email($mail)) {
+      //boh
+      $flag = false;
+      echo "mail non valida";
     }
-    return;
-}
-function buyg_flush(){
-        flush_rewrite_rules();
+    //controllo che la mail non sia gia' stata utilizzata
+    $rows = $wpdb->get_results("select * from $table where mail = '$mail'");
+    if(count($rows) > 0) {
+      //boh
+      echo "mail usata";
+      $flag = false;
+    }
+    //controllo che le password inserite siano uguali
+    if($password != $password_confirm) {
+      //boh
+      echo "password inserite non uguali";
+      $flag = false;
+    }
+
+    $password = wp_hash_password($password);
+
+    //salvo
+    if($flag) {
+      $wpdb->insert($table, array("id_store" => 1,"name"=>$name, "surname" => $surname, "mail" => $mail, "cf" => $cf, "pwd" => $password ));
+    }
+    else {
+    }
+
+	}
+
 }
 
-register_activation_hook( __FILE__, 'buyg_flush' );
+function registration_form() {
+  ob_get_clean();
+  registration_form_html();
+  registration_form_submit();
+  ob_clean();
+}
+add_shortcode("buyg_registration_form", "registration_form");
