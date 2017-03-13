@@ -835,6 +835,7 @@ function registration_form_html() {
 function registration_form_submit() {
   global $wpdb;
   $table = $wpdb->prefix."maddaai_users";
+  $table_stores = $wpdb->prefix."maddaai_magento_stores";
   // if the submit button is clicked, send the email
 	if ( isset( $_POST['buyg_submitted'] ) ) {
     //recupero i vari campi
@@ -867,11 +868,51 @@ function registration_form_submit() {
 
     $password = wp_hash_password($password);
 
+
+    //recupero l'ip della richiesta
+    $ip = $_SERVER['REMOTE_ADDR'];
+    //converto l'ip in long
+    $ip = ip2long($ip);
+    //recupero l'id dello store corrispondente
+    // $store = $wpdb->get_row("select * from $table_stores where starting_ip <= $ip and ending_ip >= $ip");
+    // if(is_null($store))
+      // echo "non esiste uno store a te corrispondente";
+      // $flag = false;
+    // }
     //salvo
     if($flag) {
       $wpdb->insert($table, array("id_store" => 1,"name"=>$name, "surname" => $surname, "mail" => $mail, "cf" => $cf, "pwd" => $password ));
+      //creo l'account su magento
+      $userData = array("username" => "syrus", "password" => "danieledaniele1");
+      $ch = curl_init("http://maddaai.syrus.it/rest/V1/integration/admin/token");
+      // $ch = curl_init($store->url."/rest/V1/integration/admin/token");
+      curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+      curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($userData));
+      curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+      curl_setopt($ch, CURLOPT_HTTPHEADER, array("Content-Type: application/json", "Content-Lenght: " . strlen(json_encode($userData))));
+      //la preghiera
+      $token = curl_exec($ch);
+
+      //comincio a creare l'utente
+      $user = array();
+      $user['customer'] = array();
+      $user['customer']['id'] = 0;
+      $user['customer']['firstname'] = $name;
+      $user['customer']['lastname'] = $surname;
+      $user['customer']['email'] = $mail;
+
+      $ch = curl_init("http://maddaai.syrus.it/rest/V1/customers");
+      curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+      curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($user));
+      curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+      curl_setopt($ch, CURLOPT_HTTPHEADER, array("Content-Type: application/json", "Authorization: Bearer " . json_decode($token)));
+
+      $result = curl_exec($ch);
+
+      var_dump($result);
     }
     else {
+      echo "errore";
     }
 
 	}
