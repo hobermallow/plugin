@@ -389,7 +389,8 @@ function buyg_options_page()
       'Impostazioni',
       'Impostazioni',
       'manage_options',
-      'buyg_settings'
+      'buyg_settings',
+      'buyg_settings_page_html'
     );
 
     //pagina per l'aggiunta di uno stores
@@ -415,6 +416,150 @@ function buyg_options_page()
 }
 //aggiungo la funzione all'hook
 add_action('admin_menu', 'buyg_options_page');
+
+function buyg_settings_page_html() {
+  //riprendo i valori nel db
+
+  // check user capabilities
+ if ( ! current_user_can( 'manage_options' ) ) {
+ return;
+ }
+
+ // add error/update messages
+
+ // check if the user have submitted the settings
+ // wordpress will add the "settings-updated" $_GET parameter to the url
+ if ( isset( $_GET['settings-updated'] ) ) {
+  //  echo "Impostazioni Aggiornate";
+ // add settings saved message with the class of "updated"
+ add_settings_error( 'buyg_messages', 'buyg_message', 'Impostazioni Salvate', 'updated' );
+ }
+
+ // show error/update messages
+ settings_errors( 'buyg_messages' );
+ ?>
+ <div class="wrap">
+ <h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
+ <form action="options.php" method="post">
+ <?php
+ settings_fields( 'buyg_settings' );
+ // output setting sections and their fields
+ // (sections are registered for "wporg", each field is registered to a specific section)
+ do_settings_sections( 'buyg_settings' );
+ // output save settings button
+ submit_button( 'Salva Impostazioni' );
+ ?>
+ </form>
+ </div>
+ <?php
+}
+
+
+
+/**
+ * custom option and settings
+ */
+function buyg_settings_init() {
+ // register a new setting for "wporg" page
+ register_setting( 'buyg_settings', 'buyg_options' );
+
+ // register a new section in the "wporg" page
+ add_settings_section(
+ 'buyg_settings_section',
+ "Impostazioni Account Magento",
+ 'buyg_settings_section_cb',
+ 'buyg_settings'
+ );
+
+ // register a new field in the "wporg_section_developers" section, inside the "wporg" page
+ add_settings_field(
+ 'buyg_settings_username', // as of WP 4.6 this value is used only internally
+ // use $args' label_for to populate the id inside the callback
+ "Username",
+ 'buyg_settings_username_cb',
+ 'buyg_settings',
+ 'buyg_settings_section',
+ [
+ 'label_for' => 'buyg_settings_username',
+ ]
+ );
+
+ add_settings_field(
+ 'buyg_settings_password', // as of WP 4.6 this value is used only internally
+ // use $args' label_for to populate the id inside the callback
+ "Password",
+ 'buyg_settings_password_cb',
+ 'buyg_settings',
+ 'buyg_settings_section',
+ [
+ 'label_for' => 'buyg_settings_password',
+ ]
+ );
+}
+
+/**
+ * register our wporg_settings_init to the admin_init action hook
+ */
+add_action( 'admin_init', 'buyg_settings_init' );
+
+/**
+ * custom option and settings:
+ * callback functions
+ */
+
+// developers section cb
+
+// section callbacks can accept an $args parameter, which is an array.
+// $args have the following keys defined: title, id, callback.
+// the values are defined at the add_settings_section() function.
+function buyg_settings_sections_cb( $args ) {
+ ?>
+ <p id="<?php echo esc_attr( $args['id'] ); ?>">Follow the white rabbit</p>
+ <?php
+}
+
+// pill field cb
+
+// field callbacks can accept an $args parameter, which is an array.
+// $args is defined at the add_settings_field() function.
+// wordpress has magic interaction with the following keys: label_for, class.
+// the "label_for" key value is used for the "for" attribute of the <label>.
+// the "class" key value is used for the "class" attribute of the <tr> containing the field.
+// you can add custom key value pairs to be used inside your callbacks.
+function buyg_settings_password_cb( $args ) {
+ // get the value of the setting we've registered with register_setting()
+ $options = get_option( 'buyg_options' );
+ // output the field
+ ?>
+ <input id="<?php echo esc_attr($args['label_for']) ?>"
+ type="text"
+ name="buyg_options[<?php echo esc_attr($args['label_for']); ?>]"
+  value="<?php echo isset( $options[ $args['label_for'] ] ) ? $options[ $args['label_for'] ] : ''; ?>" >
+ <?php
+}
+
+function buyg_settings_username_cb( $args ) {
+ // get the value of the setting we've registered with register_setting()
+ $options = get_option( 'buyg_options' );
+ // output the field
+ ?>
+ <input id="<?php echo esc_attr($args['label_for']) ?>"
+ type="text"
+ name="buyg_options[<?php echo esc_attr($args['label_for']); ?>]"
+  value="<?php echo isset( $options[ $args['label_for'] ] ) ? $options[ $args['label_for'] ] : ''; ?>" >
+ <?php
+}
+
+
+
+
+
+/**
+ * top level menu:
+ * callback functions
+ */
+
+
 
 
 //funzione per la creazione della tabella di relationship fra utenti e store
@@ -461,6 +606,7 @@ function buyg_install_database() {
   ) $charset_collate";
 
   dbDelta($sql);
+
 
 
 }
@@ -860,6 +1006,9 @@ function registration_form_submit() {
   global $wpdb;
   $table = $wpdb->prefix."maddaai_users";
   $table_stores = $wpdb->prefix."maddaai_magento_stores";
+  $options = get_option("buyg_options");
+  $userMag = $options['buyg_settings_username'];
+  $passMag = $options['buyg_settings_password'];
   // if the submit button is clicked, send the email
 	if ( isset( $_POST['buyg_name'] ) ) {
     //recupero i vari campi
@@ -926,7 +1075,7 @@ function registration_form_submit() {
 
       if($flag) {
         //creo l'account su magento
-        $userData = array("username" => "syrus", "password" => "danieledaniele1");
+        $userData = array("username" => $userMag, "password" => $passMag);
         // $ch = curl_init("http://magento.syrus.it/rest/V1/integration/admin/token");
         $ch = curl_init($store->url."/rest/V1/integration/admin/token");
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
@@ -935,7 +1084,7 @@ function registration_form_submit() {
         curl_setopt($ch, CURLOPT_HTTPHEADER, array("Content-Type: application/json", "Content-Lenght: " . strlen(json_encode($userData))));
         //la preghiera
         $token = curl_exec($ch);
-        echo var_dump($token);
+        // echo var_dump($token);
 
 
         //comincio a creare l'utente
@@ -962,7 +1111,7 @@ function registration_form_submit() {
         }
         //altrimenti controllo che l'aggiunta dell'utente su magento abbia avuto successo
         $result = json_decode($result);
-        echo var_dump($result);
+        // echo var_dump($result);
         //se e' settato il message, errore
         if(property_exists($result->message)) {
           echo $result->message;
