@@ -110,7 +110,7 @@ function buyg_users_page_html() {
       $wpdb->query("UPDATE $table SET `active` = 0 WHERE `id` IN $users");
     }
     else if($action == "buyg_delete_users") {
-      $wpdb->query("DELETE FROM $table WHERE `id` IN $users");
+      $wpdb->query("UPDATE $table SET `deleted` = 1 WHERE `id` IN $users");
     }
   }
   $user_list = new Users_List_Table();
@@ -455,6 +455,7 @@ function buyg_install_database() {
   	  active tinyint(1) not null default 0,
   	  last_login timestamp not null default current_timestamp,
   	  create_date timestamp not null default current_timestamp,
+      deleted tinyint(1) not null default 0,
       primary key(id)
 
   ) $charset_collate";
@@ -676,37 +677,37 @@ function buyg_mod_user() {
   $id = $_POST['id'];
   $name = $_POST['name'];
   $surname = $_POST['surname'];
-  $mail = $_POST['mail'];
-  $cf = $_POST['cf'];
-  $id_store = $_POST['id_store'];
+  // $mail = $_POST['mail'];
+  // $cf = $_POST['cf'];
+  // $id_store = $_POST['id_store'];
 
   //setto id_store a 0 se stringa  vuota
-  if($id_store == "" || is_null($id_store)) {
-    $id_store = "0";
-  }
+  // if($id_store == "" || is_null($id_store)) {
+    // $id_store = "0";
+  // }
 
 
   //controllo se la label e' gia' utilizzata
   global $wpdb;
   $table = $wpdb->prefix."maddaai_users";
 
-  $rows = $wpdb->get_results("SELECT * from $table WHERE mail = '$mail' and id != $id");
+  // $rows = $wpdb->get_results("SELECT * from $table WHERE mail = '$mail' and id != $id");
   //se non e' vuoto
-  if(count($rows)> 0) {
-    echo json_encode(array("status" => 0, "msg" => "Mail inserita gia' utilizzata"));
-    wp_die();
-  }
+  // if(count($rows)> 0) {
+    // echo json_encode(array("status" => 0, "msg" => "Mail inserita gia' utilizzata"));
+    // wp_die();
+  // }
   //controllo se sto effettivamente effettuando delle modifiche (se non ci sono differenze, l'update di wp da' errore)
   $user = $wpdb->get_row("SELECT * FROM $table WHERE id = $id");
   if($user != false) {
-    if($user->name == $name && $user->surname == $surname && $user->cf == $cf && $user->mail == $mail && $user->id_store == $id_store ) {
+    if($user->name == $name && $user->surname == $surname  ) {
       echo json_encode(array("status" => 0, "msg" => "Non hai effettuato alcuna modifica :)"));
       wp_die();
     }
   }
 
   //posso modificare il db
-  $ret = $wpdb->update($table, array("name" => $name, "surname" => $surname, "mail" => $mail, "cf" => $cf, "id_store" => $id_store), array('id' => $id));
+  $ret = $wpdb->update($table, array("name" => $name, "surname" => $surname), array('id' => $id));
   if($ret == false) {
     echo json_encode(array('status' => 0, "msg" => "Errore nel salvataggio dell'Utente" ));
     wp_die();
@@ -799,35 +800,58 @@ add_action("wp_ajax_buyg_autocomplete_stores", "buyg_autocomplete_stores");
 
 function registration_form_html() {
   ?>
-  <form  action="<?php  echo esc_url( $_SERVER['REQUEST_URI'] ); ?>" method="post">
-    <div class="row" style="text-align:center">
-      <label for="buyg_name">Nome</label>
-      <input type="text" required class="form-control" name="buyg_name" id="buyg_name" placeholder="Nome">
+<div class="qodef-full-width">
+  <div class="qodef-full-width-inner">
+    <div class="vc_row wpb_row vc_row-fluid qodef-section qodef-content-aligment-center qodef-grid-section" style="">
+      <div class="clearfix qodef-section-inner">
+        <div class="qodef-section-inner-margin clearfix">
+          <div class="wpb_column vc_column_container vc_col-sm-12 vc_col-lg-6">
+            <div class="vc_column-inner ">
+              <div class="wpb_wrapper">
+                <div role="form" class="wpcf7" lang="en-US" dir="ltr">
+                  <div class="screen-reader-response"></div>
+                  <form id="formRegistrazione" action="<?php  echo esc_url( $_SERVER['REQUEST_URI'] ); ?>" method="post" class="" >
+                    <div class="qodef-cf7-default-wrapper">
+                      <span class="wpcf7-form-control-wrap your-name">
+                        <input type="text" name="buyg_name" id="buyg_name" value="" size="40" class="wpcf7-form-control wpcf7-text wpcf7-validates-as-required" aria-required="true" aria-invalid="false" placeholder="Nome">
+                      </span>
+                      <span class="wpcf7-form-control-wrap your-subject">
+                        <input type="text" name="buyg_surname" id="buyg_surname" value="" size="40" class="wpcf7-form-control wpcf7-text" aria-invalid="false" placeholder="Cognome">
+                      </span>
+                      <span class="wpcf7-form-control-wrap your-email">
+                        <input type="email" name="buyg_mail" id="buyg_mail" value="" size="40" class="wpcf7-form-control wpcf7-text wpcf7-email wpcf7-validates-as-required wpcf7-validates-as-email" aria-required="true" aria-invalid="false" placeholder="Email">
+                      </span>
+                      <span class="wpcf7-form-control-wrap your-subject">
+                        <input type="text" name="buyg_cf" id="buyg_cf" value="" size="40" class="wpcf7-form-control wpcf7-text" aria-invalid="false" placeholder="Codice Fiscale">
+                      </span>
+                      <span class="wpcf7-form-control-wrap your-subject">
+                        <input type="text" name="buyg_password" id="buyg_password" value="" size="40" class="wpcf7-form-control wpcf7-text" aria-invalid="false" placeholder="Password">
+                      </span>
+                      <span class="wpcf7-form-control-wrap your-subject">
+                        <input type="text" name="buyg_password_confirm" id="buyg_password_confirm" value="" size="40" class="wpcf7-form-control wpcf7-text" aria-invalid="false" placeholder="Conferma Password">
+                      </span>
+                    </div>
+                    <p>
+                      <input type="submit" onclick="document.getElementById('formRegistrazione').submit()" value="Send" class="wpcf7-form-control wpcf7-submit"  name="buyg_submitted">
+                    </p>
+                    <div class="wpcf7-response-output wpcf7-display-none"></div>
+                  </form>
+                </div>
+                <div class="vc_empty_space" style="height: 40px">
+                  <span class="vc_empty_space_inner"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="row" style="text-align:center">
-      <label for="buyg_surname">Cognome</label>
-      <input type="text" required class="form-control" name="buyg_surname" id="buyg_surname" placeholder="Cognome">
-    </div>
-    <div class="row" style="text-align:center">
-      <label for="buyg_mail">Mail</label>
-      <input type="text" required class="form-control" name="buyg_mail" id="buyg_mail" placeholder="Mail">
-    </div>
-    <div class="row" style="text-align:center">
-      <label for="buyg_cf">Codice fiscale</label>
-      <input type="text" required class="form-control" name="buyg_cf" id="buyg_cf" placeholder="Codice Fiscale">
-    </div>
-    <div class="row" style="text-align:center">
-      <label for="buyg_password">Password</label>
-      <input type="password" required class="form-control" name="buyg_password" id="buyg_password" placeholder="">
-    </div>
-    <div class="row" style="text-align:center">
-      <label for="buyg_password_confirm">Conferma Password</label>
-      <input type="password" required class="form-control" name="buyg_password_confirm" id="buyg_password_confirm" placeholder="">
-    </div>
-    <div class="row" style="text-align:center">
-      <input type="submit"  class="btn btn-primary" value="Invia" name="buyg_submitted" />
-    </div>
-  </form>
+  </div>
+</div>
+
+
+
+
 
   <?php
 }
@@ -837,7 +861,7 @@ function registration_form_submit() {
   $table = $wpdb->prefix."maddaai_users";
   $table_stores = $wpdb->prefix."maddaai_magento_stores";
   // if the submit button is clicked, send the email
-	if ( isset( $_POST['buyg_submitted'] ) ) {
+	if ( isset( $_POST['buyg_name'] ) ) {
     //recupero i vari campi
     $flag = true;
     $name = sanitize_text_field($_POST['buyg_name']);
@@ -865,8 +889,27 @@ function registration_form_submit() {
       echo "password inserite non uguali";
       $flag = false;
     }
-
+    //controllo che la password sia lunga almeno 8 caratteri e contenga un carattere maiuscolo, uno minuscolo ed un carattere speciale
+    if (strlen($password) <= '8') {
+        echo "la password deve contenere almeno 8 caratteri";
+        $flag = false;
+    }
+    elseif(!preg_match("#[0-9]+#",$password)) {
+        echo "la password deve contenere almeno un numero ";
+        $flag = false;
+    }
+    elseif(!preg_match("#[A-Z]+#",$password)) {
+        echo "la password deve contenere almeno una lettera maiuscola";
+        $flag = false;
+    }
+    elseif(!preg_match("#[a-z]+#",$password)) {
+        echo "la password deve contenere almeno una lettera minuscola";
+        $flag = false;
+    }
+    //hash di password e codice fiscale
+    $clearPassword = $password;
     $password = wp_hash_password($password);
+    $cf = wp_hash_password($cf);
 
 
     //recupero l'ip della richiesta
@@ -874,48 +917,68 @@ function registration_form_submit() {
     //converto l'ip in long
     $ip = ip2long($ip);
     //recupero l'id dello store corrispondente
-    // $store = $wpdb->get_row("select * from $table_stores where starting_ip <= $ip and ending_ip >= $ip");
-    // if(is_null($store))
-      // echo "non esiste uno store a te corrispondente";
-      // $flag = false;
-    // }
+    $store = $wpdb->get_row("select * from $table_stores where starting_ip <= $ip and ending_ip >= $ip");
+    if(is_null($store)){
+      echo "non esiste uno store a te corrispondente";
+      $flag = false;
+    }
+
+
+      if($flag) {
+        //creo l'account su magento
+        $userData = array("username" => "syrus", "password" => "danieledaniele1");
+        // $ch = curl_init("http://magento.syrus.it/rest/V1/integration/admin/token");
+        $ch = curl_init($store->url."/rest/V1/integration/admin/token");
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($userData));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array("Content-Type: application/json", "Content-Lenght: " . strlen(json_encode($userData))));
+        //la preghiera
+        $token = curl_exec($ch);
+        echo var_dump($token);
+
+
+        //comincio a creare l'utente
+        $user = array();
+        $user['customer'] = array();
+        $user['customer']['id'] = 0;
+        $user['customer']['firstname'] = $name;
+        $user['customer']['lastname'] = $surname;
+        $user['customer']['email'] = $mail;
+        $user['password'] = $clearPassword;
+
+        $ch = curl_init($store->url."/rest/V1/customers");
+        // $ch = curl_init("http://magento.syrus.it/rest/V1/customers");
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($user));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array("Content-Type: application/json", "Authorization: Bearer " . json_decode($token)));
+
+        $result = curl_exec($ch);
+        //controllo che l'utente sia stato creato correttamente
+        if($result === false) {
+          echo "errore nella creazione dell'utente";
+          return;
+        }
+        //altrimenti controllo che l'aggiunta dell'utente su magento abbia avuto successo
+        $result = json_decode($result);
+        echo var_dump($result);
+        //se e' settato il message, errore
+        if(property_exists($result->message)) {
+          echo $result->message;
+          return;
+        }
+        else {
+          $wpdb->insert($table, array("id_store" => $store->id,"name"=>$name, "surname" => $surname, "mail" => $mail, "cf" => $cf, "pwd" => $password ));
+        }
+
+
+      }
+      else {
+        echo "errore";
+      }
+    }
     //salvo
-    if($flag) {
-      $wpdb->insert($table, array("id_store" => 1,"name"=>$name, "surname" => $surname, "mail" => $mail, "cf" => $cf, "pwd" => $password ));
-      //creo l'account su magento
-      $userData = array("username" => "syrus", "password" => "danieledaniele1");
-      $ch = curl_init("http://maddaai.syrus.it/rest/V1/integration/admin/token");
-      // $ch = curl_init($store->url."/rest/V1/integration/admin/token");
-      curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
-      curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($userData));
-      curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-      curl_setopt($ch, CURLOPT_HTTPHEADER, array("Content-Type: application/json", "Content-Lenght: " . strlen(json_encode($userData))));
-      //la preghiera
-      $token = curl_exec($ch);
-
-      //comincio a creare l'utente
-      $user = array();
-      $user['customer'] = array();
-      $user['customer']['id'] = 0;
-      $user['customer']['firstname'] = $name;
-      $user['customer']['lastname'] = $surname;
-      $user['customer']['email'] = $mail;
-
-      $ch = curl_init("http://maddaai.syrus.it/rest/V1/customers");
-      curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
-      curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($user));
-      curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-      curl_setopt($ch, CURLOPT_HTTPHEADER, array("Content-Type: application/json", "Authorization: Bearer " . json_decode($token)));
-
-      $result = curl_exec($ch);
-
-      var_dump($result);
-    }
-    else {
-      echo "errore";
-    }
-
-	}
 
 }
 
@@ -926,3 +989,132 @@ function registration_form() {
   ob_clean();
 }
 add_shortcode("buyg_registration_form", "registration_form");
+
+function login_form_html() {
+?>
+  <div class="qodef-full-width">
+    <div class="qodef-full-width-inner">
+      <div class="vc_row wpb_row vc_row-fluid qodef-section qodef-content-aligment-center qodef-grid-section" style="">
+        <div class="clearfix qodef-section-inner">
+          <div class="qodef-section-inner-margin clearfix">
+            <div class="wpb_column vc_column_container vc_col-sm-12 vc_col-lg-6">
+              <div class="vc_column-inner ">
+                <div class="wpb_wrapper">
+                  <div role="form" class="wpcf7" lang="en-US" dir="ltr">
+                    <div class="screen-reader-response"></div>
+                    <form id="formLogin" action="<?php  echo esc_url( $_SERVER['REQUEST_URI'] ); ?>" method="post" class="" >
+                      <div class="qodef-cf7-default-wrapper">
+                        <span class="wpcf7-form-control-wrap your-email">
+                          <input type="email" name="buyg_mail" id="buyg_mail" value="" size="40" class="wpcf7-form-control wpcf7-text wpcf7-email wpcf7-validates-as-required wpcf7-validates-as-email" aria-required="true" aria-invalid="false" placeholder="Email">
+                        </span>
+                        <span class="wpcf7-form-control-wrap your-subject">
+                          <input type="text" name="buyg_password" id="buyg_password" value="" size="40" class="wpcf7-form-control wpcf7-text" aria-invalid="false" placeholder="Password">
+                        </span>
+                      </div>
+                      <p>
+                        <input type="button" onclick="submitLoginForm();" value="Send" class="wpcf7-form-control wpcf7-submit"  name="buyg_submitted">
+                      </p>
+                      <div class="wpcf7-response-output wpcf7-display-none"></div>
+                    </form>
+                  </div>
+                  <div class="vc_empty_space" style="height: 40px">
+                    <span class="vc_empty_space_inner"></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+  function submitLoginForm() {
+    //recupero username e password
+    var username = jQuery("#buyg_mail").val();
+    var password = jQuery("#buyg_password").val();
+
+
+    if(username == "" || username == null) {
+      return false;
+    }
+    if(password == "" || password == null) {
+      return false;
+    }
+
+    var url = "<?php echo admin_url( 'admin-ajax.php'); ?>";
+
+    //altrimenti, post con la richiesta
+    jQuery.ajax({ //POST request
+            type: "POST",
+            url: url,
+            // _ajax_nonce: my_ajax_obj.nonce,
+            data: {
+              action: "nopriv_buyg_submit_login", //action
+              username: username,
+              password: password
+            },
+            success: function(data) { //callback
+              var obj = JSON.parse(data);
+              if (obj.status == "0") {
+                  alert(obj.msg);
+                  return false;
+              } else {
+                  // window.location.href = "http://"+obj.url;
+                  window.location.href = "http://"+obj.url+"/helloworld/index/display?username="+encodeURIComponent(username)+"&password="+encodeURIComponent(password);
+              }
+            }
+          });
+  }
+  </script>
+
+<?php
+}
+
+function buyg_submit_login() {
+  // check_ajax_referer("ajax_url_nonce");
+  global $wpdb;
+  $table = $wpdb->prefix."maddaai_users";
+  $table_stores = $wpdb->prefix."maddaai_magento_stores";
+
+  if(isset($_POST['username'])) {
+    //recupero mail e password
+    $mail = sanitize_text_field($_POST['username']);
+    $password = sanitize_text_field($_POST['password']);
+    //recupero l'utente
+    $row = $wpdb->get_row("select * from $table where mail = '$mail'");
+    if(!$row) {
+      echo json_encode(array("status" => 0, "msg" => "Mail non esistente nel sistema"));
+      wp_die();
+    }
+    //controllo che la password inserita sia corretta
+    $wp_hasher = new PasswordHash(8, TRUE);
+    if(!$wp_hasher->CheckPassword($password,$row->pwd)) {
+      echo json_encode(array("status" => 0, "msg" => "Password errata"));
+      wp_die();
+    }
+    //recupero lo store di riferimento dell'utente
+    $store = $wpdb->get_row("select * from $table_stores where id = $row->id_store");
+    //controllo che lo store e l'utente siano attivi
+    if(intval($store->active) == 0) {
+      echo json_encode(array("status" => 0, "msg" => "Store non attivo"));
+      wp_die();
+    }
+    if(intval($row->active) == 0) {
+      echo json_encode(array("status" => 0, "msg" => "Utente non attivo"));
+      wp_die();
+    }
+    echo json_encode(array("status" => 1, "url" => $store->url));
+    wp_die();
+  }
+}
+
+add_action("wp_ajax_nopriv_buyg_submit_login", "buyg_submit_login");
+
+function login_form() {
+  ob_get_clean();
+  login_form_html();
+  // login_form_submit();
+  ob_clean();
+}
+add_shortcode("buyg_login_form", "login_form");

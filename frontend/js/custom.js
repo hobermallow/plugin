@@ -1,34 +1,3 @@
-function submitLoginForm() {
-  //recupero username e password
-  var username = $("#buyg_mail").val();
-  var password = $("#buyg_password").val();
-
-  if(username == "" || username == null) {
-    return false;
-  }
-  if(password == "" || password == null) {
-    return false;
-  }
-
-  //altrimenti, post con la richiesta
-  $.post(my_ajax_obj.ajax_url, { //POST request
-          _ajax_nonce: my_ajax_obj.nonce, //nonce
-          action: "buyg_submit_login", //action
-          username: username,
-          password: password,
-      }, function(data) { //callback
-          var obj = JSON.parse(data);
-          if (obj.status == "0") {
-              sweetAlert("Ops..", obj.msg, "error");
-              return false;
-          } else {
-              location.href = obj.url;
-          }
-      } //insert server response
-  );
-}
-
-
 function validateEmail(email) {
   var re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
   return re.test(email);
@@ -132,9 +101,10 @@ function prepareModUser(id) {
   var userRow = $("#record_"+id);
   var name = $(userRow).find("td.col_user_name").html();
   var surname = $(userRow).find("td.col_user_surname").html();
-  // var mail = $(userRow).find("td.col_user_mail").html();
-  // var magento_store = $(userRow).find("td.col_user_magento_store").text();
-  // var id_store = $(userRow).find("td.col_user_magento_store").find("input[name=id_store]").val();
+  var mail = $(userRow).find("td.col_user_mail").html();
+  var cf = $(userRow).find("td.col_user_cf").html();
+  var magento_store = $(userRow).find("td.col_user_magento_store").text();
+  var id_store = $(userRow).find("td.col_user_magento_store").find("input[name=id_store]").val();
   //creo la riga per il form
   row = document.createElement("tr");
   $(row).addClass("row-user-mod-"+id);
@@ -143,11 +113,9 @@ function prepareModUser(id) {
   $(row).append("<td></td>");
   $(row).append("<td class='column-columnname'><input type='text' name='name' value='"+name+"' ></td>");
   $(row).append("<td class='column-columnname'><input type='text' name='surname' value='"+surname+"' ></td>");
-  // $(row).append("<td class='column-columnname'><input type='text' name='mail' value='"+mail+"' ></td>");
-  // $(row).append("<td class='column-columnname'><input type='hidden' name='id_store' value='"+id_store+"' /><input type='text' id='magento_store' name='magento_store' value='"+magento_store+"'/></td>");
-  $(row).append("<td class='column-columnname'></td>");
-  $(row).append("<td class='column-columnname'></td>");
-  $(row).append("<td class='column-columnname'></td>");
+  $(row).append("<td class='column-columnname'><input type='text' name='mail' value='"+mail+"' ></td>");
+  $(row).append("<td class='column-columnname'><input type='text' name='cf' value='"+cf+"' ></td>");
+  $(row).append("<td class='column-columnname'><input type='hidden' name='id_store' value='"+id_store+"' /><input type='text' id='magento_store' name='magento_store' value='"+magento_store+"'/></td>");
   $(row).append("<td class='column-columnname'></td>");
   $(row).append("<td class='column-columnname'><input type='button' class='button' value='Annulla' onclick='$(this).closest(\"tr\").hide(); $(\"tr[id^=record]\").show() ' ><input type='button' class='button' value='Salva' name='Salva' onclick='modUser("+id+")' /></td>");
   $(row).find("input[name=magento_store]").autocomplete({
@@ -183,11 +151,10 @@ function modUser(id) {
     //controllo che siano stati riempiti tutti i campi
     var name = $(row).find("input[name=name]");
     var surname = $(row).find("input[name=surname]");
-    // var mail = $(row).find("input[name=mail]");
-    // var id_store = $(row).find("input[name=id_store]");
+    var mail = $(row).find("input[name=mail]");
+    var cf = $(row).find("input[name=cf]");
+    var id_store = $(row).find("input[name=id_store]");
     var flag = true;
-
-
 
     if ($(name).val() == undefined || $(name).val() == "") {
         flag = false;
@@ -195,22 +162,22 @@ function modUser(id) {
     if ($(surname).val() == undefined || $(surname).val() == "") {
         flag = false;
     }
-    // if ($(mail).val() == undefined || $(mail).val() == "") {
-        // flag = false;
-    // }
-    // if ($(cf).val() == undefined || $(cf).val() == "") {
-        // flag = false;
-    // }
+    if ($(mail).val() == undefined || $(mail).val() == "") {
+        flag = false;
+    }
+    if ($(cf).val() == undefined || $(cf).val() == "") {
+        flag = false;
+    }
     if (!flag) {
         sweetAlert("Ops...", "Compila tutti i campi", "error");
         return false;
     }
 
     //controllo che la mail inserita sia valida
-    // if(!validateEmail($(mail).val())) {
-      // sweetAlert("Ops...", "Inserisci un indirizzo mail valido", "error");
-      // return false;
-    // }
+    if(!validateEmail($(mail).val())) {
+      sweetAlert("Ops...", "Inserisci un indirizzo mail valido", "error");
+      return false;
+    }
 
     //altrimenti, post con la richiesta
     $.post(my_ajax_obj.ajax_url, { //POST request
@@ -219,9 +186,9 @@ function modUser(id) {
             id: id,
             name: $(name).val(),
             surname: $(surname).val(),
-            // cf: $(cf).val(),
-            // mail: $(mail).val(), //data
-            // id_store: $(id_store).val()
+            cf: $(cf).val(),
+            mail: $(mail).val(), //data
+            id_store: $(id_store).val()
         }, function(data) { //callback
             var obj = JSON.parse(data);
             if (obj.status == "0") {

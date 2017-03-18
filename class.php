@@ -20,11 +20,11 @@ class Store_List_Table extends WP_List_Table
    return $columns= array(
       'col_store_cb' => '',
       'col_store_id'=> 'ID',
-      'col_store_label'=> 'Label',
-      'col_store_url'=> 'Url',
-      'col_store_starting_ip'=> 'Ip Iniziale',
-      'col_store_ending_ip'=> 'Ip Finale',
-      'col_store_active'=> 'Attivo',
+      'col_store_label'=> 'Store',
+      'col_store_url'=> 'Url Store',
+      'col_store_starting_ip'=> 'Classe Ip',
+      'col_store_ending_ip'=> 'Range Classe Ip',
+      'col_store_active'=> 'Status',
       'col_store_actions'=> 'Azioni',
    );
  }
@@ -126,13 +126,15 @@ function display_rows() {
          //Display the cell
          switch ( $column_name ) {
             case "col_store_cb" : echo '<td '.$attributes.'><input type="checkbox" name="store[]" value="'.$rec->id.'" ></td>'; break;
-            case "col_store_id":  echo '<td '.$attributes.'>'.stripslashes($rec->id).'</td>';   break;
-            case "col_store_label": echo '<td '.$attributes.'>'.stripslashes($rec->label).'7</td>'; break;
+            case "col_store_id":  echo '<td '.$attributes.'>'.stripslashes($rec->id);
+                                  echo $this->column_col_store_id($rec).'</td>';
+                                  break;
+            case "col_store_label": echo '<td '.$attributes.'>'.stripslashes($rec->label).'</td>'; break;
             case "col_store_url": echo '<td '.$attributes.'>'.stripslashes($rec->url).'</td>'; break;
             case "col_store_starting_ip": echo '<td '.$attributes.'>'.$rec->starting_ip.'</td>'; break;
             case "col_store_ending_ip": echo '<td '.$attributes.'>'.$rec->ending_ip.'</td>'; break;
-            case "col_store_active": echo '<td '.$attributes.'>'.'<input title="Attiva/Disattiva Store" value="'.$rec->id.'" onclick="event.stopPropagation();toggleStore(event.target)" type="checkbox" name="active" '.($rec->active == "1" ? "checked" :  "").' ></td>'; break;
-            case "col_store_actions": echo '<td '.$attributes.'><input type="button" class="button" value="Modifica" onclick="event.stopPropagation(); prepareModStore('.$rec->id.')" >'; break;
+            case "col_store_active": echo '<td '.$attributes.'>'.($rec->active == "1" ? "Attivo" :  "Non Attivo").' </td>'; break;
+            // case "col_store_actions": echo '<td '.$attributes.'><input type="button" class="button" value="Modifica" onclick="event.stopPropagation(); prepareModStore('.$rec->id.')" >'; break;
          }
       }
 
@@ -143,13 +145,20 @@ function display_rows() {
   }
 
   function get_bulk_actions() {
-  $actions = array(
-    'buyg_activate_stores' => 'Attiva',
-    'buyg_deactivate_stores' => 'Disattiva',
-    'buyg_delete_stores'    => 'Elimina'
-  );
-  return $actions;
-}
+    $actions = array(
+      'buyg_activate_stores' => 'Attiva',
+      'buyg_deactivate_stores' => 'Disattiva',
+      'buyg_delete_stores'    => 'Elimina'
+    );
+    return $actions;
+  }
+
+  function column_col_store_id($item) {
+        $actions = array(
+            'edit'      => '<a onclick="prepareModStore('.$item->id.')">Modifica</a>',
+        );
+        return $this->row_actions($actions);
+  }
 
 
 }
@@ -175,7 +184,6 @@ class Users_List_Table extends WP_List_Table
       'col_user_name'=> 'Nome',
       'col_user_surname'=> 'Cognome',
       'col_user_mail'=> 'Mail',
-      'col_user_cf'=> 'Codice Fiscale',
       'col_user_warning'=> 'Bid Non Pagate',
       'col_user_active'=> 'Attivo',
       'col_user_magento_store'=> 'Store',
@@ -204,9 +212,10 @@ function prepare_items() {
         $search = isset($_POST["s"]) ? sanitize_text_field($_POST["s"]) : '';
         $reset = isset($_POST["reset"]) ? sanitize_text_field($_POST["reset"]) : '';
         if(!empty($search) && empty($reset)) {
-          $query .= " WHERE name LIKE '%".$search."%' OR surname LIKE '%".$search."%' ";
+          $query .= " WHERE (name LIKE '%".$search."%' OR surname LIKE '%".$search."%) AND deleted = 0' ";
         }
         else {
+          $query .= " WHERE deleted = 0 ";
           unset($_POST['s']);
           $orderby = isset($_GET["orderby"]) ? sanitize_text_field($_GET["orderby"]) : 'ASC';
           $order = isset($_GET["order"]) ? sanitize_text_field($_GET["order"]) : '';
@@ -249,7 +258,7 @@ function prepare_items() {
    /* -- Fetch the items -- */
       $this->items = $wpdb->get_results($query);
       //setto i column headers
-      $this->_column_headers = array($this->get_columns(), array(), $this->get_sortable_columns(), "col_store_id");
+      $this->_column_headers = array($this->get_columns(), array(), $this->get_sortable_columns(), "col_user_id");
 }
 
 //display delle righe
@@ -282,15 +291,16 @@ function display_rows() {
          //Display the cell
          switch ( $column_name ) {
             case "col_user_cb" : echo '<td width="5%" '.$attributes.'><input type="checkbox" name="user[]" value="'.$rec->id.'" ></td>'; break;
-            case "col_user_id":  echo '<td width="5%" '.$attributes.'>'.stripslashes($rec->id).'</td>';   break;
+            case "col_user_id":  echo '<td width="5%" '.$attributes.'>';
+                                 echo stripslashes($rec->id);
+                                 echo $this->column_col_user_id($rec).'</td>';
+                                 break;
             case "col_user_name":  echo '<td width="10%" '.$attributes.'>'.stripslashes($rec->name).'</td>';   break;
             case "col_user_surname": echo '<td width="10%" '.$attributes.'>'.stripslashes($rec->surname).'</td>'; break;
             case "col_user_mail": echo '<td width="20%" '.$attributes.'>'.stripslashes($rec->mail).'</td>'; break;
-            case "col_user_cf": echo '<td width="20%" '.$attributes.'>'.$rec->cf.'</td>'; break;
             case "col_user_warning": echo '<td width="5%" '.$attributes.'>'.$rec->warning.'</td>'; break;
             case "col_user_magento_store": echo '<td width="10%" '.$attributes.'>'.$rec->label.'<input type="hidden" name="id_store" value="'.$rec->id_store.'"></td>'; break;
-            case "col_user_active": echo '<td width="5%" '.$attributes.'>'.'<input title="Attiva/Disattiva User" value="'.$rec->id.'" onclick="event.stopPropagation();toggleUser(event.target)" type="checkbox" name="active" '.($rec->active == "1" ? "checked" :  "").' ></td>'; break;
-            case "col_user_actions": echo '<td width="10%" '.$attributes.'><input type="button" class="button" value="Modifica" onclick="event.stopPropagation(); prepareModUser('.$rec->id.')" >'; break;
+            case "col_user_active": echo '<td width="5%" '.$attributes.'>'.($rec->active == "1" ? "Attivo" :  " Non attivo").' </td>'; break;
          }
       }
 
@@ -307,7 +317,14 @@ function display_rows() {
     'buyg_delete_users'    => 'Elimina'
   );
   return $actions;
-}
+  }
+
+  function column_col_user_id($item) {
+        $actions = array(
+            'edit'      => '<a onclick="prepareModUser('.$item->id.')">Modifica</a>',
+        );
+        return $this->row_actions($actions);
+    }
 
 
 }
