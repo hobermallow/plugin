@@ -49,11 +49,6 @@ function addUser() {
     return false;
   }
 
-  //controllo che la password contenga tutti i caratteri richiesti
-  if(!$(pwd).val().match(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])[0-9a-zA-Z]{8,}$/)) {
-    sweetAlert("Ops...", "Inserisci una password lunga almeno 8 caratteri contenente un carattere minuscolo, un carattere maiuscolo ed una cifra", "error");
-    return false;
-  }
   //altrimenti, post con la richiesta
   $.post(my_ajax_obj.ajax_url, { //POST request
           _ajax_nonce: my_ajax_obj.nonce, //nonce

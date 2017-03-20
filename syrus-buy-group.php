@@ -776,6 +776,13 @@ add_action( 'wp_ajax_buyg_add_store', 'buyg_add_store' );
 
 //funzione per l'aggiunta di un Utente
 function buyg_add_user() {
+  global $wpdb;
+  $table = $wpdb->prefix."maddaai_users";
+  $table_stores = $wpdb->prefix."maddaai_magento_stores";
+  $options = get_option("buyg_options");
+  $userMag = $options['buyg_settings_username'];
+  $passMag = $options['buyg_settings_password'];
+
   //controllo il nonce
   check_ajax_referer( 'ajax_url_nonce' );
   $name = $_POST['name'];
@@ -790,11 +797,6 @@ function buyg_add_user() {
     $id_store = "0";
   }
 
-
-  //controllo se la label e' gia' utilizzata
-  global $wpdb;
-  $table = $wpdb->prefix."maddaai_users";
-
   $rows = $wpdb->get_results("SELECT * from $table WHERE mail = '$mail' ");
   //se non e' vuoto
   if(count($rows)> 0) {
@@ -802,13 +804,68 @@ function buyg_add_user() {
     wp_die();
   }
 
-  //posso modificare il db
-  $ret = $wpdb->insert($table, array("name" => $name, "surname" => $surname, "mail" => $mail, "cf" => $cf, "pwd" => wp_hash_password($pwd), "id_store" => $id_store));
   if($ret == false) {
     echo json_encode(array('status' => 0, "msg" => "Errore nel salvataggio dell'utente" ));
     wp_die();
   }
   //altrimenti tutto ok
+  //hash di password e codice fiscale
+    $clearPassword = $password;
+    $password = wp_hash_password($password);
+    $cf = wp_hash_password($cf);
+
+    //recupero lo store
+    $store = $wpdb->get_row("select * from $table_stores where id = $id_store");
+    if(is_null($store)){
+      echo json_encode(array('status' => 0, "msg" => "Store non trovato" ));
+      wp_die();
+    }
+
+    //creo l'account su magento
+        $userData = array("username" => $userMag, "password" => $passMag);
+        $ch = curl_init($store->url."/rest/V1/integration/admin/token");
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($userData));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array("Content-Type: application/json", "Content-Lenght: " . strlen(json_encode($userData))));
+        //la preghiera
+        $token = curl_exec($ch);
+        // echo var_dump($token);
+
+
+        //comincio a creare l'utente
+        $user = array();
+        $user['customer'] = array();
+        $user['customer']['id'] = 0;
+        $user['customer']['firstname'] = $name;
+        $user['customer']['lastname'] = $surname;
+        $user['customer']['email'] = $mail;
+        $user['password'] = $clearPassword;
+
+        $ch = curl_init($store->url."/rest/V1/customers");
+        // $ch = curl_init("http://magento.syrus.it/rest/V1/customers");
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($user));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array("Content-Type: application/json", "Authorization: Bearer " . json_decode($token)));
+
+        $result = curl_exec($ch);
+        //controllo che l'utente sia stato creato correttamente
+        if($result === false) {
+          echo json_encode(array('status' => 0, "msg" => "Errore nel contattare lo store Magento" ));
+      	  wp_die();
+        }
+        //altrimenti controllo che l'aggiunta dell'utente su magento abbia avuto successo
+        $result = json_decode($result);
+        // echo var_dump($result);
+        //se e' settato il message, errore
+        if(property_exists($result->message)) {
+          echo json_encode(array('status' => 0, "msg" => $result->message ));
+      	  wp_die();
+        }
+        else {
+          $wpdb->insert($table, array("id_store" => $store->id,"name"=>$name, "surname" => $surname, "mail" => $mail, "cf" => $cf, "pwd" => $password ));
+        }
 
   echo json_encode(array("status" => 1, "url" => add_query_arg(array('page' => 'buyg_users',),admin_url('admin.php'))));
   wp_die();
@@ -945,55 +1002,30 @@ add_action("wp_ajax_buyg_autocomplete_stores", "buyg_autocomplete_stores");
 
 
 function registration_form_html() {
-  ?>
-<div class="qodef-full-width">
-  <div class="qodef-full-width-inner">
-    <div class="vc_row wpb_row vc_row-fluid qodef-section qodef-content-aligment-center qodef-grid-section" style="">
-      <div class="clearfix qodef-section-inner">
-        <div class="qodef-section-inner-margin clearfix">
-          <div class="wpb_column vc_column_container vc_col-sm-12 vc_col-lg-6">
-            <div class="vc_column-inner ">
-              <div class="wpb_wrapper">
-                <div role="form" class="wpcf7" lang="en-US" dir="ltr">
-                  <div class="screen-reader-response"></div>
-                  <form id="formRegistrazione" action="<?php  echo esc_url( $_SERVER['REQUEST_URI'] ); ?>" method="post" class="" >
-                    <div class="qodef-cf7-default-wrapper">
-                      <span class="wpcf7-form-control-wrap your-name">
-                        <input type="text" name="buyg_name" id="buyg_name" value="" size="40" class="wpcf7-form-control wpcf7-text wpcf7-validates-as-required" aria-required="true" aria-invalid="false" placeholder="Nome">
-                      </span>
-                      <span class="wpcf7-form-control-wrap your-subject">
-                        <input type="text" name="buyg_surname" id="buyg_surname" value="" size="40" class="wpcf7-form-control wpcf7-text" aria-invalid="false" placeholder="Cognome">
-                      </span>
-                      <span class="wpcf7-form-control-wrap your-email">
-                        <input type="email" name="buyg_mail" id="buyg_mail" value="" size="40" class="wpcf7-form-control wpcf7-text wpcf7-email wpcf7-validates-as-required wpcf7-validates-as-email" aria-required="true" aria-invalid="false" placeholder="Email">
-                      </span>
-                      <span class="wpcf7-form-control-wrap your-subject">
-                        <input type="text" name="buyg_cf" id="buyg_cf" value="" size="40" class="wpcf7-form-control wpcf7-text" aria-invalid="false" placeholder="Codice Fiscale">
-                      </span>
-                      <span class="wpcf7-form-control-wrap your-subject">
-                        <input type="text" name="buyg_password" id="buyg_password" value="" size="40" class="wpcf7-form-control wpcf7-text" aria-invalid="false" placeholder="Password">
-                      </span>
-                      <span class="wpcf7-form-control-wrap your-subject">
-                        <input type="text" name="buyg_password_confirm" id="buyg_password_confirm" value="" size="40" class="wpcf7-form-control wpcf7-text" aria-invalid="false" placeholder="Conferma Password">
-                      </span>
-                    </div>
-                    <p>
-                      <input type="submit" onclick="document.getElementById('formRegistrazione').submit()" value="Send" class="wpcf7-form-control wpcf7-submit"  name="buyg_submitted">
+  ?>  <p></p>
+                  <form style="margin: 0 auto; width: 300px; margin-top: 100px !important" id="formRegistrazione" action="<?php  echo esc_url( $_SERVER['REQUEST_URI'] ); ?>" method="post" class="" >
+
+                        <input type="text" name="buyg_name" id="buyg_name" value="" size="40"  placeholder="Nome">
+
+
+                        <input type="text" name="buyg_surname" id="buyg_surname" value="" size="40" placeholder="Cognome">
+
+                        <input type="email" name="buyg_mail" id="buyg_mail" value="" size="40"  placeholder="Email">
+
+
+                        <input type="text" name="buyg_cf" id="buyg_cf" value="" size="40" placeholder="Codice Fiscale">
+
+
+                        <input type="text" name="buyg_password" id="buyg_password" value="" size="40" placeholder="Password">
+
+
+                        <input type="text" name="buyg_password_confirm" id="buyg_password_confirm" value="" size="40" placeholder="Conferma Password">
+
+                    <p style="text-align:center;">
+                      <input type="submit" onclick="document.getElementById('formRegistrazione').submit()" value="Send"  name="buyg_submitted">
                     </p>
-                    <div class="wpcf7-response-output wpcf7-display-none"></div>
                   </form>
-                </div>
-                <div class="vc_empty_space" style="height: 40px">
-                  <span class="vc_empty_space_inner"></span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+
 
 
 
@@ -1141,42 +1173,18 @@ add_shortcode("buyg_registration_form", "registration_form");
 
 function login_form_html() {
 ?>
-  <div class="qodef-full-width">
-    <div class="qodef-full-width-inner">
-      <div class="vc_row wpb_row vc_row-fluid qodef-section qodef-content-aligment-center qodef-grid-section" style="">
-        <div class="clearfix qodef-section-inner">
-          <div class="qodef-section-inner-margin clearfix">
-            <div class="wpb_column vc_column_container vc_col-sm-12 vc_col-lg-6">
-              <div class="vc_column-inner ">
-                <div class="wpb_wrapper">
-                  <div role="form" class="wpcf7" lang="en-US" dir="ltr">
-                    <div class="screen-reader-response"></div>
-                    <form id="formLogin" action="<?php  echo esc_url( $_SERVER['REQUEST_URI'] ); ?>" method="post" class="" >
-                      <div class="qodef-cf7-default-wrapper">
-                        <span class="wpcf7-form-control-wrap your-email">
-                          <input type="email" name="buyg_mail" id="buyg_mail" value="" size="40" class="wpcf7-form-control wpcf7-text wpcf7-email wpcf7-validates-as-required wpcf7-validates-as-email" aria-required="true" aria-invalid="false" placeholder="Email">
-                        </span>
-                        <span class="wpcf7-form-control-wrap your-subject">
-                          <input type="text" name="buyg_password" id="buyg_password" value="" size="40" class="wpcf7-form-control wpcf7-text" aria-invalid="false" placeholder="Password">
-                        </span>
-                      </div>
+
+                    <form style="width: 300px ; margin: 0 auto; margin-top: 100px !important" id="formLogin" action="<?php  echo esc_url( $_SERVER['REQUEST_URI'] ); ?>" method="post" class="" >
+			  <label for="buyg_mail">Email</label>
+                          <input type="email" name="buyg_mail" id="buyg_mail" value="" size="40" placeholder="Email"><br>
+                          <label for="buyg_password">Password</label>
+		          <input type="text" name="buyg_password" id="buyg_password" value="" size="40" placeholder="Password">
                       <p>
-                        <input type="button" onclick="submitLoginForm();" value="Send" class="wpcf7-form-control wpcf7-submit"  name="buyg_submitted">
+                        <input type="button" onclick="submitLoginForm();" value="Send" name="buyg_submitted">
                       </p>
-                      <div class="wpcf7-response-output wpcf7-display-none"></div>
                     </form>
-                  </div>
-                  <div class="vc_empty_space" style="height: 40px">
-                    <span class="vc_empty_space_inner"></span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+
+
   <script>
   function submitLoginForm() {
     //recupero username e password
