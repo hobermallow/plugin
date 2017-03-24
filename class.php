@@ -328,3 +328,162 @@ function display_rows() {
 
 
 }
+
+
+class Notifications_List_Table extends WP_List_Table
+{
+
+  function __construct()
+  {
+    parent::__construct( array(
+      'singular'=> 'wp_list_text_notification', //Singular label
+      'plural' => 'wp_list_text_notifications', //plural label, also this well be one of the table css class
+      'ajax'   => false //We won't support Ajax for this table
+      ) );
+  }
+
+  //funzione per impostare le colonne della tabella
+  function get_columns() {
+   return $columns= array(
+      'col_notification_cb' => '',
+      'col_notification_id'=> 'ID',
+      'col_notification_name'=> 'Nome',
+      'col_notification_surname'=> 'Cognome',
+      'col_notification_link'=> 'Link',
+      'col_notification_price'=> 'Prezzo',
+      'col_notification_store'=> 'Store',
+      'col_notification_create_date'=> 'Data Creazione',
+      'col_notification_read'=> 'Letta?',
+      'col_notification_actions'=> 'Azioni',
+   );
+ }
+
+ //funzione per indicare quali colonne sono ordinabili
+ function get_sortable_columns() {
+   return $columns = array(
+     'col_notification_id' => array('id', false),
+     'col_notification_name' => array('name', false),
+     'col_notification_surname' => array('surname', false),
+     'col_notification_create_date' => array('create_date', false),
+   );
+ }
+
+//funzione per preparare gli elementi della tabella
+function prepare_items() {
+   global $wpdb, $_wp_column_headers;
+   $screen = get_current_screen();
+   $table = $wpdb->prefix. "maddaai_notifications";
+
+        $query = "SELECT * FROM $table";
+        $orderby = isset($_GET["orderby"]) ? sanitize_text_field($_GET["orderby"]) : 'ASC';
+        $order = isset($_GET["order"]) ? sanitize_text_field($_GET["order"]) : '';
+
+        if(!empty($orderby) & !empty($order)){ $query.=' ORDER BY '.$orderby.' '.$order; }
+
+
+      /* -- Pagination parameters -- */
+           //Number of elements in your table?
+           $totalitems = $wpdb->query($query); //return the total number of affected rows
+           //How many to display per page?
+           $perpage = 5;
+           //Which page is this?
+           $paged = isset($_GET["paged"]) ? sanitize_text_field($_GET["paged"]) : '';
+           //Page Number
+           if(empty($paged) || !is_numeric($paged) || $paged<=0 ){
+             $paged=1;
+           }
+          /*How many pages do we have in total? */
+           $totalpages = ceil($totalitems/$perpage);
+           /*adjust the query to take pagination into account */
+           if(!empty($paged) && !empty($perpage)){
+             $offset=($paged-1)*$perpage;
+             $query.=' LIMIT '.(int)$offset.','.(int)$perpage;
+           }
+            /* -- Register the pagination -- */
+           $this->set_pagination_args( array(
+            "total_items" => $totalitems,
+            "total_pages" => $totalpages,
+            "per_page" => $perpage,
+          ));
+        }
+
+      //The pagination links are automatically built according to those parameters
+
+   /* -- Register the Columns -- */
+      $columns = $this->get_columns();
+      $_wp_column_headers[$screen->id]=$columns;
+
+   /* -- Fetch the items -- */
+      $this->items = $wpdb->get_results($query);
+      //setto i column headers
+      $this->_column_headers = array($this->get_columns(), array(), $this->get_sortable_columns(), "col_notification_id");
+}
+
+//display delle righe
+function display_rows() {
+
+   //Get the records registered in the prepare_items method
+   $records = $this->items;
+   $screen = get_current_screen();
+  //  $columns = $_wp_column_headers[$screen->id];
+  //  $hidden = array();
+
+
+   //Get the columns registered in the get_columns and get_sortable_columns methods
+   list( $columns, $hidden ) = $this->get_column_info();
+
+   //Loop for each record
+   if(!empty($records)){foreach($records as $rec){
+
+      //Open the line
+        echo '<tr  id="record_'.$rec->id.'">';
+      foreach ( $columns as $column_name => $column_display_name ) {
+         //Style attributes for each col
+         $class = "class='$column_name column-$column_name'";
+         $style = "";
+         if ( in_array( $column_name, $hidden ) ) $style = ' style="display:none;"';
+         $attributes = $class . $style;
+
+         //edit link
+         $editlink  = '/wp-admin/link.php?action=edit&link_id='.(int)$rec->id;
+         //Display the cell
+         switch ( $column_name ) {
+            case "col_notification_cb" : echo '<td width="5%" '.$attributes.'><input type="checkbox" name="notification[]" value="'.$rec->id.'" ></td>'; break;
+            case "col_notification_id":  echo '<td width="5%" '.$attributes.'>';
+                                 echo stripslashes($rec->id);
+                                 echo $this->column_col_notification_id($rec).'</td>';
+                                 break;
+            case "col_notification_name":  echo '<td width="10%" '.$attributes.'>'.stripslashes($rec->name).'</td>';   break;
+            case "col_notification_surname": echo '<td width="10%" '.$attributes.'>'.stripslashes($rec->surname).'</td>'; break;
+            case "col_notification_link": echo '<td width="10%" '.$attributes.'>'.stripslashes($rec->link).'</td>'; break;
+            case "col_notification_price": echo '<td width="10%" '.$attributes.'>'.stripslashes($rec->price).'</td>'; break;
+            case "col_notification_store": echo '<td width="10%" '.$attributes.'>'.$rec->store.'</td>'; break;
+            case "col_notification_create_date": echo '<td width="10%" '.$attributes.'>'.$rec->create_date.'</td>'; break;
+            case "col_notification_read": echo '<td width="5%" '.$attributes.'>'.($rec->read == "1" ? "Letta" :  " Non letta").' </td>'; break;
+         }
+      }
+
+      //Close the line
+      echo'</tr>';
+    }
+    }
+  }
+
+  function get_bulk_actions() {
+  $actions = array(
+    'buyg_read_notifications' => 'Segna come lette',
+    'buyg_unread_notifications' => 'Segna come non lette',
+    'buyg_delete_notifications'    => 'Elimina'
+  );
+  return $actions;
+  }
+
+  function column_col_notification_id($item) {
+        $actions = array(
+            'edit'      => '<a onclick="prepareModNotification('.$item->id.')">Modifica</a>',
+        );
+        return $this->row_actions($actions);
+    }
+
+
+}

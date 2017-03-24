@@ -138,6 +138,39 @@ function buyg_users_page_html() {
 }
 
 
+function buyg_requests_page_html() {
+  global $wpdb;
+  $table = $wpdb->prefix."maddaai_notifications";
+
+  if($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+    //recuero gli utenti
+    // $users = $_POST['user'];
+    // $users = join(", ", $users);
+    // $users = "( ".$users." )";
+    //recupero l'azione
+    // $action = $_POST['action'];
+    // if($action == "buyg_activate_users") {
+      // $wpdb->query("UPDATE $table SET `active` = 1 WHERE `id` IN $users");
+    // }
+    // else if($action == "buyg_deactivate_users") {
+      // $wpdb->query("UPDATE $table SET `active` = 0 WHERE `id` IN $users");
+    // }
+    // else if($action == "buyg_delete_users") {
+      // $wpdb->query("UPDATE $table SET `deleted` = 1 WHERE `id` IN $users");
+    // }
+  }
+  $notification_list = new Notifications_List_Table();
+  $notification_list->prepare_items();
+  echo "<div class='wrap'>";
+  echo "<form method='post'>";
+  $user_list->display();
+  echo "</form>";
+  echo "</div>";
+  
+}
+
+
 function buyg_add_user_page_html() {
   //aggiungo bootstrap
   //db
@@ -371,7 +404,8 @@ function buyg_options_page()
       'Richieste',
       'Richieste',
       'manage_options',
-      'buyg_requests'
+      'buyg_requests',
+      'buyg_requests_page_html'
     );
 
     //aggiungo la pagina per gli annunci
@@ -581,7 +615,7 @@ function buyg_install_database() {
     active tinyint(1) NOT NULL DEFAULT 0,
     create_date timestamp not null default current_timestamp,
     PRIMARY KEY (id)
-  ) $charset_collate;";
+  ) ;";
 
   dbDelta($sql);
 
@@ -598,12 +632,29 @@ function buyg_install_database() {
   	  cf VARCHAR(255) NOT NULL,
   	  warning  bigint(20) not null default 0,
   	  active tinyint(1) not null default 0,
-  	  last_login timestamp not null default current_timestamp,
   	  create_date timestamp not null default current_timestamp,
       deleted tinyint(1) not null default 0,
       primary key(id)
 
-  ) $charset_collate";
+  ) ;";
+
+  dbDelta($sql);
+
+
+  //creo la tabella per gli utenti
+  $table_notifications = $wpdb->prefix."maddaai_notifications";
+
+  $sql = "CREATE TABLE $table_notifications (
+      id bigint(20) NOT NULL AUTO_INCREMENT,
+      name varchar(255) NOT NULL,
+  	  surname VARCHAR(255) NOT NULL,
+  	  store varchar(255)  NULL,
+  	  link VARCHAR(255) NOT NULL,
+  	  price VARCHAR(255) NOT NULL,
+  	  read tinyint(1) not null default 0,
+  	  create_date timestamp not null default current_timestamp,
+      primary key(id)
+  ) ;";
 
   dbDelta($sql);
 
@@ -797,17 +848,13 @@ function buyg_add_user() {
     $id_store = "0";
   }
 
-  $rows = $wpdb->get_results("SELECT * from $table WHERE mail = '$mail' ");
+  $rows = $wpdb->get_results("SELECT * from $table WHERE mail = '$mail' AND deleted = 0 ");
   //se non e' vuoto
   if(count($rows)> 0) {
     echo json_encode(array("status" => 0, "msg" => "Mail inserita gia' utilizzata"));
     wp_die();
   }
 
-  if($ret == false) {
-    echo json_encode(array('status' => 0, "msg" => "Errore nel salvataggio dell'utente" ));
-    wp_die();
-  }
   //altrimenti tutto ok
   //hash di password e codice fiscale
     $clearPassword = $password;
@@ -823,7 +870,7 @@ function buyg_add_user() {
 
     //creo l'account su magento
         $userData = array("username" => $userMag, "password" => $passMag);
-        $ch = curl_init($store->url."/rest/V1/integration/admin/token");
+        $ch = curl_init("http://".$store->url."/rest/V1/integration/admin/token");
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($userData));
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -842,7 +889,7 @@ function buyg_add_user() {
         $user['customer']['email'] = $mail;
         $user['password'] = $clearPassword;
 
-        $ch = curl_init($store->url."/rest/V1/customers");
+        $ch = curl_init("http://".$store->url."/rest/V1/customers");
         // $ch = curl_init("http://magento.syrus.it/rest/V1/customers");
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($user));
@@ -1058,7 +1105,7 @@ function registration_form_submit() {
       echo "mail non valida";
     }
     //controllo che la mail non sia gia' stata utilizzata
-    $rows = $wpdb->get_results("select * from $table where mail = '$mail'");
+    $rows = $wpdb->get_results("select * from $table where mail = '$mail' AND deleted = 0 ");
     if(count($rows) > 0) {
       //boh
       echo "mail usata";
@@ -1109,14 +1156,14 @@ function registration_form_submit() {
         //creo l'account su magento
         $userData = array("username" => $userMag, "password" => $passMag);
         // $ch = curl_init("http://magento.syrus.it/rest/V1/integration/admin/token");
-        $ch = curl_init($store->url."/rest/V1/integration/admin/token");
+        $ch = curl_init("http://".$store->url."/rest/V1/integration/admin/token");
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($userData));
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HTTPHEADER, array("Content-Type: application/json", "Content-Lenght: " . strlen(json_encode($userData))));
         //la preghiera
         $token = curl_exec($ch);
-        // echo var_dump($token);
+        //echo var_dump($token);
 
 
         //comincio a creare l'utente
@@ -1126,9 +1173,11 @@ function registration_form_submit() {
         $user['customer']['firstname'] = $name;
         $user['customer']['lastname'] = $surname;
         $user['customer']['email'] = $mail;
+	$user['customer']['dob'] = "01/01/1900";
+	$user['customer']['gender'] = 0;
         $user['password'] = $clearPassword;
 
-        $ch = curl_init($store->url."/rest/V1/customers");
+        $ch = curl_init("http://".$store->url."/rest/V1/customers");
         // $ch = curl_init("http://magento.syrus.it/rest/V1/customers");
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($user));
@@ -1143,7 +1192,6 @@ function registration_form_submit() {
         }
         //altrimenti controllo che l'aggiunta dell'utente su magento abbia avuto successo
         $result = json_decode($result);
-        // echo var_dump($result);
         //se e' settato il message, errore
         if(property_exists($result->message)) {
           echo $result->message;
@@ -1151,6 +1199,13 @@ function registration_form_submit() {
         }
         else {
           $wpdb->insert($table, array("id_store" => $store->id,"name"=>$name, "surname" => $surname, "mail" => $mail, "cf" => $cf, "pwd" => $password ));
+	if(!$wpdb->insert_id) {
+		echo "Errore nell'inserimento dell'utente nel database";
+		return;
+	}
+	else {
+		echo "Utente creato correttamente";
+	}
         }
 
 
@@ -1218,7 +1273,7 @@ function login_form_html() {
                   return false;
               } else {
                   // window.location.href = "http://"+obj.url;
-                  window.location.href = "http://"+obj.url+"/helloworld/index/display?username="+encodeURIComponent(username)+"&password="+encodeURIComponent(password);
+                  window.location.href = "http://138.68.79.234/helloworld/index/display?username="+encodeURIComponent(username)+"&password="+encodeURIComponent(password);
               }
             }
           });
@@ -1275,3 +1330,53 @@ function login_form() {
   ob_clean();
 }
 add_shortcode("buyg_login_form", "login_form");
+
+//funzione per la registrazione dell'API REST per l'interazione con Magento
+public function buyg_register_rest_api()
+{
+    //route per le notifiche
+    register_rest_api("syrus-buy-group/v1", "/notification", array(
+      "methods" => "POST",
+      "callback" => "buyg_notification_rest_api_callback"
+    ));
+}
+add_action("rest_api_init", "buyg_register_rest_api");
+
+//callback per la gestione delle notifiche via rest api
+public function buyg_notification_rest_api_callback()
+{
+  global $wpdb;
+  $table = $wpdb->prefix . "maddaai_notifications";
+  //recupero i dati della richiesta in post , codificata in JSON
+  $parameters = $request->get_json_params();
+  //controllo che siano settati i parametri della richiesta
+  $data['name'] = $parameters["name"];
+  $data['surname'] = $parameters["surname"];
+  $data['link'] = $parameters["link"];
+  $data['price'] = $parameters["price"];
+  $data['store'] = $parameters["store"];
+  $data['read'] = 0;
+  //salvo tutti i dati nel db
+  $table_notifications = $wpdb->prefix . "maddaai_notifications";
+  $ret = $wpdb->insert($table_notifications, $data);
+  if($ret) {
+    echo json_encode(array("status" => 1));
+  }
+  else {
+    echo json_encode(array("status" => 0));
+  }
+}
+
+public function buyg_add_notifications_bubble($menu)
+{
+  $pending_count = 10; // Use your code to create this number
+
+    foreach( $menu as $menu_key => $menu_data )
+    {
+        // From the plugin URL http://example.com/wp-admin/edit.php?post_type=acf
+        if( 'buyg_requests' != $menu_data[2] )
+            continue;
+        $menu[$menu_key][0] .= " <span class='update-plugins count-$pending_count'><span class='plugin-count'>" . number_format_i18n($pending_count) . '</span></span>';
+    }
+    return $menu;
+}
