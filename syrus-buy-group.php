@@ -164,10 +164,10 @@ function buyg_requests_page_html() {
   $notification_list->prepare_items();
   echo "<div class='wrap'>";
   echo "<form method='post'>";
-  $user_list->display();
+  $notification_list->display();
   echo "</form>";
   echo "</div>";
-  
+
 }
 
 
@@ -1332,7 +1332,7 @@ function login_form() {
 add_shortcode("buyg_login_form", "login_form");
 
 //funzione per la registrazione dell'API REST per l'interazione con Magento
-public function buyg_register_rest_api()
+function buyg_register_rest_api()
 {
     //route per le notifiche
     register_rest_api("syrus-buy-group/v1", "/notification", array(
@@ -1343,7 +1343,7 @@ public function buyg_register_rest_api()
 add_action("rest_api_init", "buyg_register_rest_api");
 
 //callback per la gestione delle notifiche via rest api
-public function buyg_notification_rest_api_callback()
+function buyg_notification_rest_api_callback()
 {
   global $wpdb;
   $table = $wpdb->prefix . "maddaai_notifications";
@@ -1367,14 +1367,14 @@ public function buyg_notification_rest_api_callback()
   }
 }
 
-public function buyg_add_notifications_bubble($menu)
+function buyg_add_notifications_bubble($menu)
 {
   $pending_count = 10; // Use your code to create this number
 
     foreach( $menu as $menu_key => $menu_data )
     {
         // From the plugin URL http://example.com/wp-admin/edit.php?post_type=acf
-        if( 'buyg_requests' != $menu_data[2] )
+        if( 'admin.php?page=buyg_requests' != $menu_data[2] )
             continue;
         $menu[$menu_key][0] .= " <span class='update-plugins count-$pending_count'><span class='plugin-count'>" . number_format_i18n($pending_count) . '</span></span>';
     }

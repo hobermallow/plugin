@@ -405,7 +405,7 @@ function prepare_items() {
             "total_pages" => $totalpages,
             "per_page" => $perpage,
           ));
-        }
+        
 
       //The pagination links are automatically built according to those parameters
 
