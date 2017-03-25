@@ -145,20 +145,20 @@ function buyg_requests_page_html() {
   if($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     //recuero gli utenti
-    // $users = $_POST['user'];
-    // $users = join(", ", $users);
-    // $users = "( ".$users." )";
-    //recupero l'azione
-    // $action = $_POST['action'];
-    // if($action == "buyg_activate_users") {
-      // $wpdb->query("UPDATE $table SET `active` = 1 WHERE `id` IN $users");
-    // }
-    // else if($action == "buyg_deactivate_users") {
-      // $wpdb->query("UPDATE $table SET `active` = 0 WHERE `id` IN $users");
-    // }
-    // else if($action == "buyg_delete_users") {
-      // $wpdb->query("UPDATE $table SET `deleted` = 1 WHERE `id` IN $users");
-    // }
+    $notifications = $_POST['notification'];
+    $notifications = join(", ", $notifications);
+    $notifications = "( ".$notifications." )";
+    // recupero l'azione
+    $action = $_POST['action'];
+    if($action == "buyg_read_notifications") {
+      $wpdb->query("UPDATE $table SET `read` = 1 WHERE `id` IN $notifications");
+    }
+    else if($action == "buyg_unread_notifications") {
+      $wpdb->query("UPDATE $table SET `read` = 0 WHERE `id` IN $notifications");
+    }
+    else if($action == "buyg_delete_notifications") {
+      $wpdb->query("DELETE FROM $table WHERE `id` IN $notifications");
+    }
   }
   $notification_list = new Notifications_List_Table();
   $notification_list->prepare_items();
@@ -651,7 +651,7 @@ function buyg_install_database() {
   	  store varchar(255)  NULL,
   	  link VARCHAR(255) NOT NULL,
   	  price VARCHAR(255) NOT NULL,
-  	  read tinyint(1) not null default 0,
+  	  `read` tinyint(1) not null default 0,
   	  create_date timestamp not null default current_timestamp,
       primary key(id)
   ) ;";
