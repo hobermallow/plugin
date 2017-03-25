@@ -1343,7 +1343,7 @@ function buyg_register_rest_api()
 add_action("rest_api_init", "buyg_register_rest_api");
 
 //callback per la gestione delle notifiche via rest api
-function buyg_notification_rest_api_callback()
+function buyg_notification_rest_api_callback($request)
 {
   global $wpdb;
   $table = $wpdb->prefix . "maddaai_notifications";
