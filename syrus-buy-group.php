@@ -1335,7 +1335,7 @@ add_shortcode("buyg_login_form", "login_form");
 function buyg_register_rest_api()
 {
     //route per le notifiche
-    register_rest_api("syrus-buy-group/v1", "/notification", array(
+    register_rest_route("syrus-buy-group/v1", "/notification", array(
       "methods" => "POST",
       "callback" => "buyg_notification_rest_api_callback"
     ));
