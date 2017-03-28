@@ -647,6 +647,7 @@ function buyg_install_database() {
   $sql = "CREATE TABLE $table_notifications (
       id bigint(20) NOT NULL AUTO_INCREMENT,
       name varchar(255) NOT NULL,
+      surname varchar(255) NOT NULL,
   	  store varchar(255)  NULL,
   	  link VARCHAR(255) NOT NULL,
   	  price VARCHAR(255) NOT NULL,
@@ -1350,6 +1351,7 @@ function buyg_notification_rest_api_callback($request)
   $parameters = $request->get_json_params();
   //controllo che siano settati i parametri della richiesta
   $data['name'] = $parameters["name"];
+  $data['surname'] = $parameters["surname"];
   $data['link'] = $parameters["link"];
   $data['price'] = $parameters["price"];
   $data['store'] = $parameters["store"];

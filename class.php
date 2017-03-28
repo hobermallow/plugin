@@ -348,6 +348,7 @@ class Notifications_List_Table extends WP_List_Table
       'col_notification_cb' => '',
       'col_notification_id'=> 'ID',
       'col_notification_name'=> 'Nome',
+      'col_notification_surname'=> 'Cognome',
       'col_notification_link'=> 'Link',
       'col_notification_price'=> 'Prezzo',
       'col_notification_store'=> 'Store',
@@ -362,6 +363,7 @@ class Notifications_List_Table extends WP_List_Table
    return $columns = array(
      'col_notification_id' => array('id', false),
      'col_notification_name' => array('name', false),
+     'col_notification_surname' => array('surname', false),
      'col_notification_create_date' => array('create_date', false),
    );
  }
@@ -452,6 +454,7 @@ function display_rows() {
                                  echo $this->column_col_notification_id($rec).'</td>';
                                  break;
             case "col_notification_name":  echo '<td width="10%" '.$attributes.'>'.stripslashes($rec->name).'</td>';   break;
+            case "col_notification_surname":  echo '<td width="10%" '.$attributes.'>'.stripslashes($rec->surname).'</td>';   break;
             case "col_notification_link": echo '<td width="10%" '.$attributes.'>'.stripslashes($rec->link).'</td>'; break;
             case "col_notification_price": echo '<td width="10%" '.$attributes.'>'.stripslashes($rec->price).'</td>'; break;
             case "col_notification_store": echo '<td width="10%" '.$attributes.'>'.$rec->store.'</td>'; break;
